@@ -1,0 +1,11 @@
+import { requireUser } from "@/lib/auth";
+import { Alert, ButtonLink, Card, EmptyState, PageHeader, StatusBadge } from "@/components/ui";
+import { VerifyPaymentButton } from "@/features/payments/purchase-form";
+import { PriceSnapshot } from "@/features/payments/price-snapshot";
+export default async function Payments({ searchParams }: { searchParams: Promise<{ page?: string; verification?: string }> }) {
+  const { user, db } = await requireUser(); const params = await searchParams;
+  const page = Math.max(1, Math.min(10000, Number(params.page) || 1)); const from = (Math.floor(page) - 1) * 20;
+  const { data, error, count } = await db.from("payments").select("id,reference,charge_amount,charge_currency,status,created_at,display_amount,display_currency,display_minor_units,exchange_rate,exchange_rate_source,exchange_rate_as_of,country_code", { count: "exact" }).eq("user_id", user.id).order("created_at", { ascending: false }).range(from, from + 19);
+  if (error) throw new Error("Payment history is unavailable.");
+  return <><PageHeader title="Payment History" description="Your one-time voucher purchases."><ButtonLink href="/buy-voucher">Buy a voucher</ButtonLink></PageHeader>{params.verification && <Alert>{params.verification === "account" ? "We could not access this checkout in your current session. Sign in with the account used to start the purchase. The payments below belong to your current account." : "Your payment is awaiting confirmation. Use Check payment status below to retry."}</Alert>}<div className="grid gap-4 mt-5">{data.map(payment => <Card key={payment.id}><div className="flex flex-wrap justify-between gap-3"><h2 className="font-semibold break-all">{payment.reference}</h2><StatusBadge status={payment.status}/></div><PriceSnapshot payment={payment}/><p className="muted text-sm mt-2">{new Date(payment.created_at).toLocaleDateString("en-GB")}</p>{payment.status !== "refunded" && <VerifyPaymentButton reference={payment.reference}/>}</Card>)}</div>{!data.length && <EmptyState title="No payments yet" description="Your purchases will appear here."/>}<div className="flex gap-4 mt-6">{from > 0 && <ButtonLink secondary href={`?page=${Math.floor(page) - 1}`}>Previous</ButtonLink>}{from + 20 < (count ?? 0) && <ButtonLink secondary href={`?page=${Math.floor(page) + 1}`}>Next</ButtonLink>}</div></>;
+}

@@ -1,0 +1,14 @@
+import { applicationGuidance } from "@/features/applications/tracking";
+import { notFound } from "next/navigation";
+import { z } from "zod";
+import { requireUser } from "@/lib/auth";
+import { ApiError } from "@/lib/http";
+import { loadApplication } from "@/features/applications/service";
+import { ApplicationReview, ApplicationWizard } from "@/features/applications/wizard";
+import { Card, PageHeader, StatusBadge } from "@/components/ui";
+export default async function ApplicationDetail({ params }: { params: Promise<{ id: string }> }) {
+  const { user } = await requireUser(); const { id } = await params;
+  if (!z.uuid().safeParse(id).success) notFound();
+  const application = await loadApplication(user.id,id).catch(error => { if (error instanceof ApiError && error.status === 404) notFound(); throw error; });
+  return <><PageHeader title={application.reference} description={application.opportunity_title_snapshot || application.job.title}><StatusBadge status={application.status}/></PageHeader><Card className="mb-6"><h2 className="font-bold mb-3">Current status and next steps</h2><p className="mb-5">{applicationGuidance(application.status)}</p><h2 className="font-bold mb-3">CruiseApply review and screening</h2><p className="text-sm leading-6">{application.service_description_snapshot || "This application predates recorded service descriptions. Contact CruiseApply for its service scope."}</p>{application.submitted_at && <p className="mt-4 font-semibold">Received by CruiseApply for screening. Employer matching and hiring decisions have not been made by this submission.</p>}</Card>{application.status === "draft" ? <ApplicationWizard id={id} initialDraft={application.draft} initialRevision={application.revision} updatedAt={application.updated_at} initialDocuments={application.documents} job={{ ...application.job, title: application.opportunity_title_snapshot || application.job.title, service_description: application.service_description_snapshot }}/> : <div className="grid gap-6"><Card><h2 className="text-xl font-bold mb-5">Application history</h2><ol aria-label="Application status timeline" className="grid gap-6 border-l-2 border-blue-100 ml-2 pl-5">{application.history.map((entry,i) => <li key={i} className="relative"><span aria-hidden="true" className="absolute -left-7 top-1 h-3 w-3 rounded-full bg-primary"/><StatusBadge status={entry.status}/><p className="mt-2">{entry.message}</p><p className="muted text-sm">{new Date(entry.created_at).toLocaleString("en-GB")}</p></li>)}</ol></Card><Card><ApplicationReview draft={application.draft} documents={application.documents}/><div className="grid gap-3 mt-6">{application.documents.map(doc => <a className="text-primary" key={doc.id} href={`/api/applications/${id}/documents/${doc.id}`}>Download {doc.name}</a>)}</div></Card></div>}</>;
+}

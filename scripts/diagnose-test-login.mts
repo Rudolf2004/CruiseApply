@@ -1,0 +1,11 @@
+import { readFile } from "node:fs/promises";
+import { createClient } from "@supabase/supabase-js";
+const state = JSON.parse(await readFile("test-results/checkout-e2e-state.json","utf8"));
+const db = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!,process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,{ auth: { persistSession: false,autoRefreshToken: false } });
+const result = await db.auth.signInWithPassword({ email: state.email,password: state.password });
+console.log({ authenticated: !!result.data.user,status: result.error?.status,code: result.error?.code,message: result.error?.message });
+if (result.data.session) await db.auth.signOut({ scope: "local" });
+const base = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+const local = await fetch(`${base}/api/auth/login`,{ method: "POST",headers: { Origin: new URL(base).origin,"Content-Type": "application/json" },body: JSON.stringify({ email: state.email,password: state.password }) });
+const body = await local.json();
+console.log({ appStatus: local.status,appError: body.error,hasRedirect: !!body.redirect });

@@ -1,0 +1,12 @@
+node_modules/
+.next/
+.env*
+!.env.example
+coverage/
+*.tsbuildinfo
+playwright-report/
+test-results/
+.browser-profile/
+
+certificates/
+.next-applicant-preview/

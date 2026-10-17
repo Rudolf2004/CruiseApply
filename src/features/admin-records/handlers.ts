@@ -1,0 +1,5 @@
+import "server-only";
+import {ApiError,apiError,apiUser,assertSameOrigin,json,readJson} from "@/lib/http";
+import {serviceDatabase} from "@/lib/supabase/server";
+import {adminCommand} from "./controls";
+export async function saveConfiguration(request:Request){try{assertSameOrigin(request);const {user,profile}=await apiUser(true);const input=adminCommand.parse(await readJson(request));if(input.operation==="product_save"&&profile.role!=="super_admin")throw new ApiError(403,"Pricing changes require a super administrator.");const r=await serviceDatabase().rpc("save_administration_record",{p_request_id:input.requestId,p_actor_id:user.id,p_operation:input.operation,p_data:input.data});if(r.error){if(r.error.message?.includes("administrator required")||r.error.message==="Administrator required")throw new ApiError(403,"Staff authorization is unavailable.");if(["P0001","23505"].includes(r.error.code))throw new ApiError(409,"The record changed or this edit is not allowed. Refresh the record. An intake with applications permits status changes only.");throw new Error("Configuration unavailable");}return json(r.data);}catch(e){return apiError(e);}}

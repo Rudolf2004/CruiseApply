@@ -1,0 +1,13 @@
+import {randomUUID} from "node:crypto";
+import {notFound} from "next/navigation";
+import {requireUser} from "@/lib/auth";
+import {PageHeader,Alert} from "@/components/ui";
+import {ConfigurationEditor} from "@/features/admin-records/editor";
+import {applicationServiceDescription} from "@/features/jobs/service-description";
+export default async function Configuration({params}:{params:Promise<{kind:string;id:string}>}){const {db,profile}=await requireUser(true),{kind,id}=await params;if(!["intake","product"].includes(kind)||id!=="new"&&!/^[a-f0-9-]{36}$/.test(id))notFound();if(kind==="product"&&profile.role!=="super_admin")return <Alert error>Pricing changes require a super administrator.</Alert>;
+ let initial:Record<string,unknown>;
+ if(kind==="intake"&&id==="new")initial={id:randomUUID(),revision:0,title:"",slug:"",category:"",department:"",location:"Worldwide",summary:"",description:"",serviceDescription:applicationServiceDescription,status:"draft",requiredDocuments:[],questions:[]};
+ else{const r=await db.from(kind==="intake"?"jobs":"voucher_types").select(kind==="intake"?"id,admin_revision,title,slug,category,department,location,summary,description,service_description,status,required_documents,questions,opportunity_type,company,sample":"id,admin_revision,name,description,amount,validity_days,active").eq("id",id).maybeSingle();if(r.error)return <Alert error>Configuration controls are unavailable until migration 0015 is applied and verified.</Alert>;if(!r.data)notFound();const row=r.data as unknown as Record<string,unknown>;
+ if(kind==="intake"){if(row.opportunity_type!=="managed"||row.company!==null||row.sample)return <Alert error>Research, employer-assigned and sample records cannot be published through these managed-intake controls.</Alert>;initial={id:row.id,revision:row.admin_revision,title:row.title,slug:row.slug,category:row.category,department:row.department,location:row.location,summary:row.summary,description:row.description,serviceDescription:row.service_description,status:row.status,requiredDocuments:row.required_documents,questions:row.questions};}else initial={id:row.id,revision:row.admin_revision,name:row.name,description:row.description,amount:row.amount,validityDays:row.validity_days,active:row.active};}
+ return <section><PageHeader title={kind==="intake"?"Managed intake configuration":"Voucher product configuration"} description="Changes are attributed to your staff account. Existing payment and application snapshots are preserved."/><ConfigurationEditor operation={kind==="intake"?"intake_save":"product_save"} initial={initial}/></section>;
+}

@@ -1,0 +1,4056 @@
+{
+	"engine": "PostgreSQL 17.6 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+	"guards": [
+		{
+			"name": "guard_applicant_notification_binding",
+			"definition": "CREATE OR REPLACE FUNCTION public.guard_applicant_notification_binding()\n RETURNS trigger\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO ''\nAS $function$\r\ndeclare n public.notifications; a public.voucher_access; v public.vouchers; application_voucher uuid;\r\nbegin\r\n  if tg_op = 'UPDATE' and to_jsonb(new) is distinct from to_jsonb(old) then\r\n    raise exception 'Notification scope is immutable';\r\n  end if;\r\n  select * into n from public.notifications where id = new.notification_id;\r\n  select * into a from public.voucher_access where id = new.voucher_access_id;\r\n  select * into v from public.vouchers where id = a.voucher_id;\r\n  if n.id is null or a.id is null or v.id is null then raise exception 'Notification scope unavailable'; end if;\r\n  if n.user_id is not null then\r\n    if n.user_id is distinct from a.legacy_user_id then raise exception 'Notification owner mismatch'; end if;\r\n  elsif n.applicant_id is distinct from a.applicant_id then raise exception 'Notification owner mismatch'; end if;\r\n  if new.application_id is not null then\r\n    select voucher_id into application_voucher from public.applications where id = new.application_id;\r\n    if application_voucher is distinct from v.id then raise exception 'Notification application mismatch'; end if;\r\n  elsif new.payment_id is distinct from v.payment_id then raise exception 'Notification payment mismatch'; end if;\r\n  return new;\r\nend; $function$\n",
+			"anon_execute": false,
+			"service_execute": false,
+			"authenticated_execute": false
+		},
+		{
+			"name": "guard_applicant_owner_identity",
+			"definition": "CREATE OR REPLACE FUNCTION public.guard_applicant_owner_identity()\n RETURNS trigger\n LANGUAGE plpgsql\n SET search_path TO ''\nAS $function$\r\nbegin\r\n  if new.user_id is distinct from old.user_id\r\n    or new.applicant_id is distinct from old.applicant_id then\r\n    raise exception 'Record ownership is immutable';\r\n  end if;\r\n  return new;\r\nend; $function$\n",
+			"anon_execute": false,
+			"service_execute": false,
+			"authenticated_execute": false
+		},
+		{
+			"name": "guard_applicant_session_bounds",
+			"definition": "CREATE OR REPLACE FUNCTION public.guard_applicant_session_bounds()\n RETURNS trigger\n LANGUAGE plpgsql\n SET search_path TO ''\nAS $function$\r\nbegin\r\n  if new.id is distinct from old.id or new.voucher_access_id is distinct from old.voucher_access_id\r\n    or new.token_hash is distinct from old.token_hash or new.credential_version is distinct from old.credential_version\r\n    or new.created_at is distinct from old.created_at or new.absolute_expires_at is distinct from old.absolute_expires_at then\r\n    raise exception 'Session identity and absolute lifetime are immutable';\r\n  end if;\r\n  if new.last_seen_at < old.last_seen_at then raise exception 'Session activity cannot move backwards'; end if;\r\n  if new.last_seen_at is distinct from old.last_seen_at then\r\n    if old.revoked_at is not null or old.idle_expires_at <= clock_timestamp()\r\n      or old.absolute_expires_at <= clock_timestamp() or new.last_seen_at > clock_timestamp() then\r\n      raise exception 'Inactive session cannot refresh activity';\r\n    end if;\r\n  end if;\r\n  if old.revoked_at is not null and new.revoked_at is distinct from old.revoked_at then\r\n    raise exception 'Revoked session cannot be restored';\r\n  end if;\r\n  return new;\r\nend; $function$\n",
+			"anon_execute": false,
+			"service_execute": false,
+			"authenticated_execute": false
+		},
+		{
+			"name": "guard_credential_delivery_binding",
+			"definition": "CREATE OR REPLACE FUNCTION public.guard_credential_delivery_binding()\n RETURNS trigger\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO ''\nAS $function$\r\ndeclare access_principal uuid; checkout_principal uuid;\r\nbegin\r\n  select applicant_id into access_principal from public.voucher_access where id = new.voucher_access_id;\r\n  select applicant_id into checkout_principal from public.guest_checkouts where id = new.guest_checkout_id;\r\n  if access_principal is null or access_principal is distinct from checkout_principal then\r\n    raise exception 'Credential delivery ownership mismatch';\r\n  end if;\r\n  if tg_op = 'UPDATE' then\r\n    if new.id is distinct from old.id or new.voucher_access_id is distinct from old.voucher_access_id or new.guest_checkout_id is distinct from old.guest_checkout_id\r\n      or new.capability_hash is distinct from old.capability_hash or new.created_at is distinct from old.created_at\r\n      or new.expires_at is distinct from old.expires_at then raise exception 'Credential delivery binding is immutable'; end if;\r\n    if old.consumed_at is not null and new.consumed_at is distinct from old.consumed_at then raise exception 'Delivery already consumed'; end if;\r\n    if old.revoked_at is not null and new.revoked_at is distinct from old.revoked_at then raise exception 'Delivery revoked'; end if;\r\n  end if;\r\n  return new;\r\nend; $function$\n",
+			"anon_execute": false,
+			"service_execute": false,
+			"authenticated_execute": false
+		},
+		{
+			"name": "guard_guest_checkout_binding",
+			"definition": "CREATE OR REPLACE FUNCTION public.guard_guest_checkout_binding()\n RETURNS trigger\n LANGUAGE plpgsql\n SET search_path TO ''\nAS $function$\r\nbegin\r\n  if (to_jsonb(new) - 'revoked_at') is distinct from (to_jsonb(old) - 'revoked_at') then\r\n    raise exception 'Checkout capability and ownership are immutable';\r\n  end if;\r\n  if old.revoked_at is not null and new.revoked_at is distinct from old.revoked_at then\r\n    raise exception 'Revoked checkout cannot be restored';\r\n  end if;\r\n  return new;\r\nend; $function$\n",
+			"anon_execute": false,
+			"service_execute": false,
+			"authenticated_execute": false
+		},
+		{
+			"name": "guard_voucher_access_binding",
+			"definition": "CREATE OR REPLACE FUNCTION public.guard_voucher_access_binding()\n RETURNS trigger\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO ''\nAS $function$\r\ndeclare v public.vouchers; p public.payments;\r\nbegin\r\n  if tg_op = 'UPDATE' then\r\n    if new.id is distinct from old.id or new.created_at is distinct from old.created_at\r\n      or new.voucher_id is distinct from old.voucher_id or new.applicant_id is distinct from old.applicant_id\r\n      or new.legacy_user_id is distinct from old.legacy_user_id then\r\n      raise exception 'Voucher access binding is immutable';\r\n    end if;\r\n    if new.credential_version < old.credential_version then raise exception 'Credential version cannot decrease'; end if;\r\n    if new.pin_hash is distinct from old.pin_hash or new.credential_state is distinct from old.credential_state then\r\n      if new.credential_version <= old.credential_version or new.credential_state <> 'current' then\r\n        raise exception 'Credential changes require forward rotation';\r\n      end if;\r\n    end if;\r\n    if old.revoked_at is not null and new.revoked_at is distinct from old.revoked_at then\r\n      raise exception 'Revoked access cannot be restored';\r\n    end if;\r\n  end if;\r\n  select * into v from public.vouchers where id = new.voucher_id;\r\n  select * into p from public.payments where id = v.payment_id;\r\n  if v.id is null or p.id is null or v.user_id is distinct from p.user_id\r\n    or v.applicant_id is distinct from p.applicant_id then raise exception 'Voucher ownership chain mismatch'; end if;\r\n  if p.status not in ('successful','refunded') or p.paid_at is null then\r\n    raise exception 'Voucher access requires a previously verified purchase';\r\n  end if;\r\n  if v.user_id is not null then\r\n    if new.legacy_user_id is distinct from v.user_id or new.credential_state = 'pending_delivery' then\r\n      raise exception 'Legacy voucher binding mismatch';\r\n    end if;\r\n  elsif new.applicant_id is distinct from v.applicant_id or new.legacy_user_id is not null\r\n    or new.credential_state = 'legacy' then raise exception 'Applicant voucher binding mismatch'; end if;\r\n  return new;\r\nend; $function$\n",
+			"anon_execute": false,
+			"service_execute": false,
+			"authenticated_execute": false
+		},
+		{
+			"name": "guard_voucher_challenge_binding",
+			"definition": "CREATE OR REPLACE FUNCTION public.guard_voucher_challenge_binding()\n RETURNS trigger\n LANGUAGE plpgsql\n SET search_path TO ''\nAS $function$\r\nbegin\r\n  if (to_jsonb(new) - array['consumed_at','revoked_at','failed_attempts'])\r\n    is distinct from (to_jsonb(old) - array['consumed_at','revoked_at','failed_attempts']) then\r\n    raise exception 'Challenge binding is immutable';\r\n  end if;\r\n  if new.failed_attempts < old.failed_attempts then raise exception 'Challenge attempts cannot decrease'; end if;\r\n  if old.consumed_at is not null and new.consumed_at is distinct from old.consumed_at then raise exception 'Challenge consumed'; end if;\r\n  if old.revoked_at is not null and new.revoked_at is distinct from old.revoked_at then raise exception 'Challenge revoked'; end if;\r\n  return new;\r\nend; $function$\n",
+			"anon_execute": false,
+			"service_execute": false,
+			"authenticated_execute": false
+		},
+		{
+			"name": "guard_voucher_contact_binding",
+			"definition": "CREATE OR REPLACE FUNCTION public.guard_voucher_contact_binding()\n RETURNS trigger\n LANGUAGE plpgsql\n SET search_path TO ''\nAS $function$\r\nbegin\r\n  if new.id is distinct from old.id or new.voucher_access_id is distinct from old.voucher_access_id\r\n    or new.created_at is distinct from old.created_at then raise exception 'Contact binding is immutable'; end if;\r\n  if new.contact_version < old.contact_version then raise exception 'Contact version cannot decrease'; end if;\r\n  if new.email is distinct from old.email then\r\n    if new.contact_version <= old.contact_version or new.verified_at is not null then\r\n      raise exception 'Changed contact requires new verification';\r\n    end if;\r\n  end if;\r\n  return new;\r\nend; $function$\n",
+			"anon_execute": false,
+			"service_execute": false,
+			"authenticated_execute": false
+		}
+	],
+	"columns": [
+		{
+			"type": "uuid",
+			"table": "applicants",
+			"column": "user_id",
+			"default": null,
+			"not_null": true
+		},
+		{
+			"type": "uuid",
+			"table": "applicants",
+			"column": "applicant_id",
+			"default": null,
+			"not_null": false
+		},
+		{
+			"type": "uuid",
+			"table": "applications",
+			"column": "user_id",
+			"default": null,
+			"not_null": true
+		},
+		{
+			"type": "uuid",
+			"table": "applications",
+			"column": "applicant_id",
+			"default": null,
+			"not_null": false
+		},
+		{
+			"type": "uuid",
+			"table": "application_documents",
+			"column": "user_id",
+			"default": null,
+			"not_null": true
+		},
+		{
+			"type": "uuid",
+			"table": "application_documents",
+			"column": "applicant_id",
+			"default": null,
+			"not_null": false
+		},
+		{
+			"type": "uuid",
+			"table": "vouchers",
+			"column": "user_id",
+			"default": null,
+			"not_null": true
+		},
+		{
+			"type": "uuid",
+			"table": "vouchers",
+			"column": "applicant_id",
+			"default": null,
+			"not_null": false
+		},
+		{
+			"type": "uuid",
+			"table": "notifications",
+			"column": "user_id",
+			"default": null,
+			"not_null": true
+		},
+		{
+			"type": "uuid",
+			"table": "notifications",
+			"column": "applicant_id",
+			"default": null,
+			"not_null": false
+		},
+		{
+			"type": "uuid",
+			"table": "application_status_history",
+			"column": "actor_applicant_id",
+			"default": null,
+			"not_null": false
+		},
+		{
+			"type": "uuid",
+			"table": "audit_logs",
+			"column": "actor_applicant_id",
+			"default": null,
+			"not_null": false
+		},
+		{
+			"type": "uuid",
+			"table": "payment_quotes",
+			"column": "user_id",
+			"default": null,
+			"not_null": true
+		},
+		{
+			"type": "uuid",
+			"table": "payment_quotes",
+			"column": "applicant_id",
+			"default": null,
+			"not_null": false
+		},
+		{
+			"type": "uuid",
+			"table": "payment_quotes",
+			"column": "guest_checkout_id",
+			"default": null,
+			"not_null": false
+		},
+		{
+			"type": "uuid",
+			"table": "payments",
+			"column": "user_id",
+			"default": null,
+			"not_null": true
+		},
+		{
+			"type": "uuid",
+			"table": "payments",
+			"column": "applicant_id",
+			"default": null,
+			"not_null": false
+		},
+		{
+			"type": "uuid",
+			"table": "payments",
+			"column": "guest_checkout_id",
+			"default": null,
+			"not_null": false
+		},
+		{
+			"type": "uuid",
+			"table": "applicant_principals",
+			"column": "id",
+			"default": "gen_random_uuid()",
+			"not_null": true
+		},
+		{
+			"type": "text",
+			"table": "applicant_principals",
+			"column": "display_name",
+			"default": null,
+			"not_null": false
+		},
+		{
+			"type": "timestamp with time zone",
+			"table": "applicant_principals",
+			"column": "created_at",
+			"default": "now()",
+			"not_null": true
+		},
+		{
+			"type": "timestamp with time zone",
+			"table": "applicant_principals",
+			"column": "disabled_at",
+			"default": null,
+			"not_null": false
+		},
+		{
+			"type": "uuid",
+			"table": "guest_checkouts",
+			"column": "id",
+			"default": "gen_random_uuid()",
+			"not_null": true
+		},
+		{
+			"type": "uuid",
+			"table": "guest_checkouts",
+			"column": "applicant_id",
+			"default": null,
+			"not_null": true
+		},
+		{
+			"type": "text",
+			"table": "guest_checkouts",
+			"column": "capability_hash",
+			"default": null,
+			"not_null": true
+		},
+		{
+			"type": "text",
+			"table": "guest_checkouts",
+			"column": "contact_email",
+			"default": null,
+			"not_null": true
+		},
+		{
+			"type": "text",
+			"table": "guest_checkouts",
+			"column": "contact_name",
+			"default": null,
+			"not_null": false
+		},
+		{
+			"type": "text",
+			"table": "guest_checkouts",
+			"column": "contact_phone",
+			"default": null,
+			"not_null": false
+		},
+		{
+			"type": "text",
+			"table": "guest_checkouts",
+			"column": "country_code",
+			"default": null,
+			"not_null": true
+		},
+		{
+			"type": "timestamp with time zone",
+			"table": "guest_checkouts",
+			"column": "created_at",
+			"default": "now()",
+			"not_null": true
+		},
+		{
+			"type": "timestamp with time zone",
+			"table": "guest_checkouts",
+			"column": "expires_at",
+			"default": null,
+			"not_null": true
+		},
+		{
+			"type": "timestamp with time zone",
+			"table": "guest_checkouts",
+			"column": "revoked_at",
+			"default": null,
+			"not_null": false
+		},
+		{
+			"type": "uuid",
+			"table": "voucher_access",
+			"column": "id",
+			"default": "gen_random_uuid()",
+			"not_null": true
+		},
+		{
+			"type": "uuid",
+			"table": "voucher_access",
+			"column": "voucher_id",
+			"default": null,
+			"not_null": true
+		},
+		{
+			"type": "uuid",
+			"table": "voucher_access",
+			"column": "applicant_id",
+			"default": null,
+			"not_null": true
+		},
+		{
+			"type": "uuid",
+			"table": "voucher_access",
+			"column": "legacy_user_id",
+			"default": null,
+			"not_null": false
+		},
+		{
+			"type": "text",
+			"table": "voucher_access",
+			"column": "credential_state",
+			"default": null,
+			"not_null": true
+		},
+		{
+			"type": "text",
+			"table": "voucher_access",
+			"column": "pin_hash",
+			"default": null,
+			"not_null": false
+		},
+		{
+			"type": "integer",
+			"table": "voucher_access",
+			"column": "credential_version",
+			"default": "0",
+			"not_null": true
+		},
+		{
+			"type": "timestamp with time zone",
+			"table": "voucher_access",
+			"column": "credential_rotated_at",
+			"default": null,
+			"not_null": false
+		},
+		{
+			"type": "timestamp with time zone",
+			"table": "voucher_access",
+			"column": "created_at",
+			"default": "now()",
+			"not_null": true
+		},
+		{
+			"type": "timestamp with time zone",
+			"table": "voucher_access",
+			"column": "suspended_at",
+			"default": null,
+			"not_null": false
+		},
+		{
+			"type": "timestamp with time zone",
+			"table": "voucher_access",
+			"column": "revoked_at",
+			"default": null,
+			"not_null": false
+		},
+		{
+			"type": "uuid",
+			"table": "applicant_sessions",
+			"column": "id",
+			"default": "gen_random_uuid()",
+			"not_null": true
+		},
+		{
+			"type": "uuid",
+			"table": "applicant_sessions",
+			"column": "voucher_access_id",
+			"default": null,
+			"not_null": true
+		},
+		{
+			"type": "text",
+			"table": "applicant_sessions",
+			"column": "token_hash",
+			"default": null,
+			"not_null": true
+		},
+		{
+			"type": "integer",
+			"table": "applicant_sessions",
+			"column": "credential_version",
+			"default": null,
+			"not_null": true
+		},
+		{
+			"type": "timestamp with time zone",
+			"table": "applicant_sessions",
+			"column": "created_at",
+			"default": "now()",
+			"not_null": true
+		},
+		{
+			"type": "timestamp with time zone",
+			"table": "applicant_sessions",
+			"column": "last_seen_at",
+			"default": "now()",
+			"not_null": true
+		},
+		{
+			"type": "timestamp with time zone",
+			"table": "applicant_sessions",
+			"column": "idle_expires_at",
+			"default": "(now() + '168:00:00'::interval)",
+			"not_null": true
+		},
+		{
+			"type": "timestamp with time zone",
+			"table": "applicant_sessions",
+			"column": "absolute_expires_at",
+			"default": "(now() + '720:00:00'::interval)",
+			"not_null": true
+		},
+		{
+			"type": "timestamp with time zone",
+			"table": "applicant_sessions",
+			"column": "revoked_at",
+			"default": null,
+			"not_null": false
+		},
+		{
+			"type": "uuid",
+			"table": "voucher_contacts",
+			"column": "id",
+			"default": "gen_random_uuid()",
+			"not_null": true
+		},
+		{
+			"type": "uuid",
+			"table": "voucher_contacts",
+			"column": "voucher_access_id",
+			"default": null,
+			"not_null": true
+		},
+		{
+			"type": "text",
+			"table": "voucher_contacts",
+			"column": "email",
+			"default": null,
+			"not_null": true
+		},
+		{
+			"type": "integer",
+			"table": "voucher_contacts",
+			"column": "contact_version",
+			"default": "1",
+			"not_null": true
+		},
+		{
+			"type": "timestamp with time zone",
+			"table": "voucher_contacts",
+			"column": "verified_at",
+			"default": null,
+			"not_null": false
+		},
+		{
+			"type": "timestamp with time zone",
+			"table": "voucher_contacts",
+			"column": "created_at",
+			"default": "now()",
+			"not_null": true
+		},
+		{
+			"type": "uuid",
+			"table": "voucher_contact_challenges",
+			"column": "id",
+			"default": "gen_random_uuid()",
+			"not_null": true
+		},
+		{
+			"type": "uuid",
+			"table": "voucher_contact_challenges",
+			"column": "voucher_access_id",
+			"default": null,
+			"not_null": true
+		},
+		{
+			"type": "uuid",
+			"table": "voucher_contact_challenges",
+			"column": "contact_id",
+			"default": null,
+			"not_null": true
+		},
+		{
+			"type": "integer",
+			"table": "voucher_contact_challenges",
+			"column": "contact_version",
+			"default": null,
+			"not_null": true
+		},
+		{
+			"type": "text",
+			"table": "voucher_contact_challenges",
+			"column": "purpose",
+			"default": null,
+			"not_null": true
+		},
+		{
+			"type": "text",
+			"table": "voucher_contact_challenges",
+			"column": "token_hash",
+			"default": null,
+			"not_null": true
+		},
+		{
+			"type": "timestamp with time zone",
+			"table": "voucher_contact_challenges",
+			"column": "created_at",
+			"default": "now()",
+			"not_null": true
+		},
+		{
+			"type": "timestamp with time zone",
+			"table": "voucher_contact_challenges",
+			"column": "expires_at",
+			"default": null,
+			"not_null": true
+		},
+		{
+			"type": "timestamp with time zone",
+			"table": "voucher_contact_challenges",
+			"column": "consumed_at",
+			"default": null,
+			"not_null": false
+		},
+		{
+			"type": "timestamp with time zone",
+			"table": "voucher_contact_challenges",
+			"column": "revoked_at",
+			"default": null,
+			"not_null": false
+		},
+		{
+			"type": "integer",
+			"table": "voucher_contact_challenges",
+			"column": "failed_attempts",
+			"default": "0",
+			"not_null": true
+		},
+		{
+			"type": "uuid",
+			"table": "voucher_credential_deliveries",
+			"column": "id",
+			"default": "gen_random_uuid()",
+			"not_null": true
+		},
+		{
+			"type": "uuid",
+			"table": "voucher_credential_deliveries",
+			"column": "voucher_access_id",
+			"default": null,
+			"not_null": true
+		},
+		{
+			"type": "uuid",
+			"table": "voucher_credential_deliveries",
+			"column": "guest_checkout_id",
+			"default": null,
+			"not_null": true
+		},
+		{
+			"type": "text",
+			"table": "voucher_credential_deliveries",
+			"column": "capability_hash",
+			"default": null,
+			"not_null": true
+		},
+		{
+			"type": "timestamp with time zone",
+			"table": "voucher_credential_deliveries",
+			"column": "created_at",
+			"default": "now()",
+			"not_null": true
+		},
+		{
+			"type": "timestamp with time zone",
+			"table": "voucher_credential_deliveries",
+			"column": "expires_at",
+			"default": null,
+			"not_null": true
+		},
+		{
+			"type": "timestamp with time zone",
+			"table": "voucher_credential_deliveries",
+			"column": "consumed_at",
+			"default": null,
+			"not_null": false
+		},
+		{
+			"type": "timestamp with time zone",
+			"table": "voucher_credential_deliveries",
+			"column": "revoked_at",
+			"default": null,
+			"not_null": false
+		},
+		{
+			"type": "uuid",
+			"table": "applicant_notification_links",
+			"column": "notification_id",
+			"default": null,
+			"not_null": true
+		},
+		{
+			"type": "uuid",
+			"table": "applicant_notification_links",
+			"column": "voucher_access_id",
+			"default": null,
+			"not_null": true
+		},
+		{
+			"type": "uuid",
+			"table": "applicant_notification_links",
+			"column": "application_id",
+			"default": null,
+			"not_null": false
+		},
+		{
+			"type": "uuid",
+			"table": "applicant_notification_links",
+			"column": "payment_id",
+			"default": null,
+			"not_null": false
+		}
+	],
+	"indexes": [
+		{
+			"ready": true,
+			"table": "applicants",
+			"valid": true,
+			"definition": "CREATE UNIQUE INDEX applicants_pkey ON public.applicants USING btree (id)"
+		},
+		{
+			"ready": true,
+			"table": "applicants",
+			"valid": true,
+			"definition": "CREATE UNIQUE INDEX applicants_user_id_key ON public.applicants USING btree (user_id)"
+		},
+		{
+			"ready": true,
+			"table": "applicants",
+			"valid": true,
+			"definition": "CREATE INDEX applicants_principal_idx ON public.applicants USING btree (applicant_id) WHERE (applicant_id IS NOT NULL)"
+		},
+		{
+			"ready": true,
+			"table": "applicants",
+			"valid": true,
+			"definition": "CREATE UNIQUE INDEX applicants_principal_unique ON public.applicants USING btree (applicant_id) WHERE (applicant_id IS NOT NULL)"
+		},
+		{
+			"ready": true,
+			"table": "application_education",
+			"valid": true,
+			"definition": "CREATE UNIQUE INDEX application_education_pkey ON public.application_education USING btree (id)"
+		},
+		{
+			"ready": true,
+			"table": "voucher_types",
+			"valid": true,
+			"definition": "CREATE UNIQUE INDEX voucher_types_code_key ON public.voucher_types USING btree (code)"
+		},
+		{
+			"ready": true,
+			"table": "voucher_types",
+			"valid": true,
+			"definition": "CREATE UNIQUE INDEX voucher_types_pkey ON public.voucher_types USING btree (id)"
+		},
+		{
+			"ready": true,
+			"table": "application_experience",
+			"valid": true,
+			"definition": "CREATE UNIQUE INDEX application_experience_pkey ON public.application_experience USING btree (id)"
+		},
+		{
+			"ready": true,
+			"table": "applications",
+			"valid": true,
+			"definition": "CREATE INDEX applications_owner_index ON public.applications USING btree (user_id, created_at DESC)"
+		},
+		{
+			"ready": true,
+			"table": "applications",
+			"valid": true,
+			"definition": "CREATE INDEX applications_status_index ON public.applications USING btree (status, job_id)"
+		},
+		{
+			"ready": true,
+			"table": "applications",
+			"valid": true,
+			"definition": "CREATE UNIQUE INDEX applications_pkey ON public.applications USING btree (id)"
+		},
+		{
+			"ready": true,
+			"table": "applications",
+			"valid": true,
+			"definition": "CREATE UNIQUE INDEX applications_reference_key ON public.applications USING btree (reference)"
+		},
+		{
+			"ready": true,
+			"table": "applications",
+			"valid": true,
+			"definition": "CREATE UNIQUE INDEX applications_voucher_id_key ON public.applications USING btree (voucher_id)"
+		},
+		{
+			"ready": true,
+			"table": "applications",
+			"valid": true,
+			"definition": "CREATE INDEX applications_principal_idx ON public.applications USING btree (applicant_id) WHERE (applicant_id IS NOT NULL)"
+		},
+		{
+			"ready": true,
+			"table": "application_documents",
+			"valid": true,
+			"definition": "CREATE INDEX documents_application_index ON public.application_documents USING btree (application_id)"
+		},
+		{
+			"ready": true,
+			"table": "application_documents",
+			"valid": true,
+			"definition": "CREATE UNIQUE INDEX application_documents_pkey ON public.application_documents USING btree (id)"
+		},
+		{
+			"ready": true,
+			"table": "application_documents",
+			"valid": true,
+			"definition": "CREATE UNIQUE INDEX application_documents_storage_path_key ON public.application_documents USING btree (storage_path)"
+		},
+		{
+			"ready": true,
+			"table": "application_documents",
+			"valid": true,
+			"definition": "CREATE INDEX application_documents_principal_idx ON public.application_documents USING btree (applicant_id) WHERE (applicant_id IS NOT NULL)"
+		},
+		{
+			"ready": true,
+			"table": "jobs",
+			"valid": true,
+			"definition": "CREATE UNIQUE INDEX jobs_pkey ON public.jobs USING btree (id)"
+		},
+		{
+			"ready": true,
+			"table": "jobs",
+			"valid": true,
+			"definition": "CREATE UNIQUE INDEX jobs_slug_key ON public.jobs USING btree (slug)"
+		},
+		{
+			"ready": true,
+			"table": "jobs",
+			"valid": true,
+			"definition": "CREATE INDEX jobs_public_index ON public.jobs USING btree (status, featured, created_at DESC)"
+		},
+		{
+			"ready": true,
+			"table": "jobs",
+			"valid": true,
+			"definition": "CREATE INDEX jobs_filters_index ON public.jobs USING btree (category, department, company, location)"
+		},
+		{
+			"ready": true,
+			"table": "application_answers",
+			"valid": true,
+			"definition": "CREATE UNIQUE INDEX application_answers_pkey ON public.application_answers USING btree (application_id, question_id)"
+		},
+		{
+			"ready": true,
+			"table": "profiles",
+			"valid": true,
+			"definition": "CREATE UNIQUE INDEX profiles_pkey ON public.profiles USING btree (id)"
+		},
+		{
+			"ready": true,
+			"table": "platform_settings",
+			"valid": true,
+			"definition": "CREATE UNIQUE INDEX platform_settings_pkey ON public.platform_settings USING btree (key)"
+		},
+		{
+			"ready": true,
+			"table": "request_limits",
+			"valid": true,
+			"definition": "CREATE UNIQUE INDEX request_limits_pkey ON public.request_limits USING btree (key)"
+		},
+		{
+			"ready": true,
+			"table": "admin_notes",
+			"valid": true,
+			"definition": "CREATE UNIQUE INDEX admin_notes_pkey ON public.admin_notes USING btree (id)"
+		},
+		{
+			"ready": true,
+			"table": "vouchers",
+			"valid": true,
+			"definition": "CREATE INDEX vouchers_owner_index ON public.vouchers USING btree (user_id)"
+		},
+		{
+			"ready": true,
+			"table": "vouchers",
+			"valid": true,
+			"definition": "CREATE UNIQUE INDEX vouchers_pkey ON public.vouchers USING btree (id)"
+		},
+		{
+			"ready": true,
+			"table": "vouchers",
+			"valid": true,
+			"definition": "CREATE UNIQUE INDEX vouchers_serial_key ON public.vouchers USING btree (serial)"
+		},
+		{
+			"ready": true,
+			"table": "vouchers",
+			"valid": true,
+			"definition": "CREATE UNIQUE INDEX vouchers_payment_id_key ON public.vouchers USING btree (payment_id)"
+		},
+		{
+			"ready": true,
+			"table": "vouchers",
+			"valid": true,
+			"definition": "CREATE INDEX vouchers_principal_idx ON public.vouchers USING btree (applicant_id) WHERE (applicant_id IS NOT NULL)"
+		},
+		{
+			"ready": true,
+			"table": "notifications",
+			"valid": true,
+			"definition": "CREATE INDEX notifications_owner_index ON public.notifications USING btree (user_id, created_at DESC)"
+		},
+		{
+			"ready": true,
+			"table": "notifications",
+			"valid": true,
+			"definition": "CREATE UNIQUE INDEX notifications_pkey ON public.notifications USING btree (id)"
+		},
+		{
+			"ready": true,
+			"table": "notifications",
+			"valid": true,
+			"definition": "CREATE INDEX notifications_principal_idx ON public.notifications USING btree (applicant_id) WHERE (applicant_id IS NOT NULL)"
+		},
+		{
+			"ready": true,
+			"table": "application_status_history",
+			"valid": true,
+			"definition": "CREATE INDEX history_application_index ON public.application_status_history USING btree (application_id, created_at)"
+		},
+		{
+			"ready": true,
+			"table": "application_status_history",
+			"valid": true,
+			"definition": "CREATE UNIQUE INDEX application_status_history_pkey ON public.application_status_history USING btree (id)"
+		},
+		{
+			"ready": true,
+			"table": "application_status_history",
+			"valid": true,
+			"definition": "CREATE INDEX history_applicant_actor ON public.application_status_history USING btree (actor_applicant_id) WHERE (actor_applicant_id IS NOT NULL)"
+		},
+		{
+			"ready": true,
+			"table": "audit_logs",
+			"valid": true,
+			"definition": "CREATE UNIQUE INDEX audit_logs_pkey ON public.audit_logs USING btree (id)"
+		},
+		{
+			"ready": true,
+			"table": "audit_logs",
+			"valid": true,
+			"definition": "CREATE INDEX audit_applicant_actor ON public.audit_logs USING btree (actor_applicant_id) WHERE (actor_applicant_id IS NOT NULL)"
+		},
+		{
+			"ready": true,
+			"table": "pricing_currencies",
+			"valid": true,
+			"definition": "CREATE UNIQUE INDEX pricing_currencies_pkey ON public.pricing_currencies USING btree (code)"
+		},
+		{
+			"ready": true,
+			"table": "pricing_regions",
+			"valid": true,
+			"definition": "CREATE UNIQUE INDEX pricing_regions_pkey ON public.pricing_regions USING btree (id)"
+		},
+		{
+			"ready": true,
+			"table": "pricing_regions",
+			"valid": true,
+			"definition": "CREATE UNIQUE INDEX pricing_regions_code_key ON public.pricing_regions USING btree (code)"
+		},
+		{
+			"ready": true,
+			"table": "voucher_price_overrides",
+			"valid": true,
+			"definition": "CREATE UNIQUE INDEX voucher_price_overrides_pkey ON public.voucher_price_overrides USING btree (id)"
+		},
+		{
+			"ready": true,
+			"table": "voucher_price_overrides",
+			"valid": true,
+			"definition": "CREATE UNIQUE INDEX voucher_country_price ON public.voucher_price_overrides USING btree (voucher_type_id, country_code) WHERE (country_code IS NOT NULL)"
+		},
+		{
+			"ready": true,
+			"table": "voucher_price_overrides",
+			"valid": true,
+			"definition": "CREATE UNIQUE INDEX voucher_region_price ON public.voucher_price_overrides USING btree (voucher_type_id, region_id) WHERE (region_id IS NOT NULL)"
+		},
+		{
+			"ready": true,
+			"table": "pricing_exchange_rates",
+			"valid": true,
+			"definition": "CREATE UNIQUE INDEX pricing_exchange_rates_pkey ON public.pricing_exchange_rates USING btree (quote_currency)"
+		},
+		{
+			"ready": true,
+			"table": "pricing_countries",
+			"valid": true,
+			"definition": "CREATE UNIQUE INDEX pricing_countries_pkey ON public.pricing_countries USING btree (code)"
+		},
+		{
+			"ready": true,
+			"table": "payment_quotes",
+			"valid": true,
+			"definition": "CREATE UNIQUE INDEX payment_quotes_pkey ON public.payment_quotes USING btree (id)"
+		},
+		{
+			"ready": true,
+			"table": "payment_quotes",
+			"valid": true,
+			"definition": "CREATE INDEX payment_quotes_owner ON public.payment_quotes USING btree (user_id, created_at DESC)"
+		},
+		{
+			"ready": true,
+			"table": "payment_quotes",
+			"valid": true,
+			"definition": "CREATE INDEX payment_quotes_principal_idx ON public.payment_quotes USING btree (applicant_id) WHERE (applicant_id IS NOT NULL)"
+		},
+		{
+			"ready": true,
+			"table": "payment_quotes",
+			"valid": true,
+			"definition": "CREATE INDEX quote_guest_checkout_idx ON public.payment_quotes USING btree (guest_checkout_id, applicant_id) WHERE (guest_checkout_id IS NOT NULL)"
+		},
+		{
+			"ready": true,
+			"table": "payments",
+			"valid": true,
+			"definition": "CREATE INDEX payments_owner_index ON public.payments USING btree (user_id, created_at DESC)"
+		},
+		{
+			"ready": true,
+			"table": "payments",
+			"valid": true,
+			"definition": "CREATE UNIQUE INDEX payments_pkey ON public.payments USING btree (id)"
+		},
+		{
+			"ready": true,
+			"table": "payments",
+			"valid": true,
+			"definition": "CREATE UNIQUE INDEX payments_reference_key ON public.payments USING btree (reference)"
+		},
+		{
+			"ready": true,
+			"table": "payments",
+			"valid": true,
+			"definition": "CREATE UNIQUE INDEX payments_quote_id_key ON public.payments USING btree (quote_id)"
+		},
+		{
+			"ready": true,
+			"table": "payments",
+			"valid": true,
+			"definition": "CREATE INDEX payments_principal_idx ON public.payments USING btree (applicant_id) WHERE (applicant_id IS NOT NULL)"
+		},
+		{
+			"ready": true,
+			"table": "payments",
+			"valid": true,
+			"definition": "CREATE INDEX payment_guest_checkout_idx ON public.payments USING btree (guest_checkout_id, applicant_id) WHERE (guest_checkout_id IS NOT NULL)"
+		},
+		{
+			"ready": true,
+			"table": "employers",
+			"valid": true,
+			"definition": "CREATE UNIQUE INDEX employers_pkey ON public.employers USING btree (id)"
+		},
+		{
+			"ready": true,
+			"table": "employer_opportunities",
+			"valid": true,
+			"definition": "CREATE UNIQUE INDEX employer_opportunities_pkey ON public.employer_opportunities USING btree (id)"
+		},
+		{
+			"ready": true,
+			"table": "employer_opportunities",
+			"valid": true,
+			"definition": "CREATE INDEX employer_opportunities_employer_index ON public.employer_opportunities USING btree (employer_id)"
+		},
+		{
+			"ready": true,
+			"table": "application_matches",
+			"valid": true,
+			"definition": "CREATE UNIQUE INDEX application_matches_pkey ON public.application_matches USING btree (id)"
+		},
+		{
+			"ready": true,
+			"table": "application_matches",
+			"valid": true,
+			"definition": "CREATE UNIQUE INDEX application_matches_application_id_employer_opportunity_id_key ON public.application_matches USING btree (application_id, employer_opportunity_id)"
+		},
+		{
+			"ready": true,
+			"table": "application_matches",
+			"valid": true,
+			"definition": "CREATE INDEX application_matches_application_index ON public.application_matches USING btree (application_id)"
+		},
+		{
+			"ready": true,
+			"table": "application_review_commands",
+			"valid": true,
+			"definition": "CREATE UNIQUE INDEX application_review_commands_pkey ON public.application_review_commands USING btree (request_id)"
+		},
+		{
+			"ready": true,
+			"table": "applicant_principals",
+			"valid": true,
+			"definition": "CREATE UNIQUE INDEX applicant_principals_pkey ON public.applicant_principals USING btree (id)"
+		},
+		{
+			"ready": true,
+			"table": "guest_checkouts",
+			"valid": true,
+			"definition": "CREATE UNIQUE INDEX guest_checkouts_pkey ON public.guest_checkouts USING btree (id)"
+		},
+		{
+			"ready": true,
+			"table": "guest_checkouts",
+			"valid": true,
+			"definition": "CREATE UNIQUE INDEX guest_checkouts_applicant_id_key ON public.guest_checkouts USING btree (applicant_id)"
+		},
+		{
+			"ready": true,
+			"table": "guest_checkouts",
+			"valid": true,
+			"definition": "CREATE UNIQUE INDEX guest_checkouts_capability_hash_key ON public.guest_checkouts USING btree (capability_hash)"
+		},
+		{
+			"ready": true,
+			"table": "guest_checkouts",
+			"valid": true,
+			"definition": "CREATE UNIQUE INDEX guest_checkouts_id_applicant_id_key ON public.guest_checkouts USING btree (id, applicant_id)"
+		},
+		{
+			"ready": true,
+			"table": "guest_checkouts",
+			"valid": true,
+			"definition": "CREATE INDEX guest_checkout_country ON public.guest_checkouts USING btree (country_code)"
+		},
+		{
+			"ready": true,
+			"table": "voucher_access",
+			"valid": true,
+			"definition": "CREATE UNIQUE INDEX voucher_access_pkey ON public.voucher_access USING btree (id)"
+		},
+		{
+			"ready": true,
+			"table": "voucher_access",
+			"valid": true,
+			"definition": "CREATE UNIQUE INDEX voucher_access_voucher_id_key ON public.voucher_access USING btree (voucher_id)"
+		},
+		{
+			"ready": true,
+			"table": "voucher_access",
+			"valid": true,
+			"definition": "CREATE UNIQUE INDEX voucher_access_applicant_id_key ON public.voucher_access USING btree (applicant_id)"
+		},
+		{
+			"ready": true,
+			"table": "voucher_access",
+			"valid": true,
+			"definition": "CREATE INDEX voucher_access_legacy_owner ON public.voucher_access USING btree (legacy_user_id) WHERE (legacy_user_id IS NOT NULL)"
+		},
+		{
+			"ready": true,
+			"table": "applicant_sessions",
+			"valid": true,
+			"definition": "CREATE UNIQUE INDEX applicant_sessions_pkey ON public.applicant_sessions USING btree (id)"
+		},
+		{
+			"ready": true,
+			"table": "applicant_sessions",
+			"valid": true,
+			"definition": "CREATE UNIQUE INDEX applicant_sessions_token_hash_key ON public.applicant_sessions USING btree (token_hash)"
+		},
+		{
+			"ready": true,
+			"table": "applicant_sessions",
+			"valid": true,
+			"definition": "CREATE INDEX applicant_sessions_access ON public.applicant_sessions USING btree (voucher_access_id)"
+		},
+		{
+			"ready": true,
+			"table": "applicant_sessions",
+			"valid": true,
+			"definition": "CREATE INDEX applicant_sessions_expiry ON public.applicant_sessions USING btree (absolute_expires_at)"
+		},
+		{
+			"ready": true,
+			"table": "voucher_contacts",
+			"valid": true,
+			"definition": "CREATE UNIQUE INDEX voucher_contacts_pkey ON public.voucher_contacts USING btree (id)"
+		},
+		{
+			"ready": true,
+			"table": "voucher_contacts",
+			"valid": true,
+			"definition": "CREATE UNIQUE INDEX voucher_contacts_voucher_access_id_key ON public.voucher_contacts USING btree (voucher_access_id)"
+		},
+		{
+			"ready": true,
+			"table": "voucher_contacts",
+			"valid": true,
+			"definition": "CREATE UNIQUE INDEX voucher_contacts_id_voucher_access_id_key ON public.voucher_contacts USING btree (id, voucher_access_id)"
+		},
+		{
+			"ready": true,
+			"table": "voucher_contact_challenges",
+			"valid": true,
+			"definition": "CREATE UNIQUE INDEX voucher_contact_challenges_pkey ON public.voucher_contact_challenges USING btree (id)"
+		},
+		{
+			"ready": true,
+			"table": "voucher_contact_challenges",
+			"valid": true,
+			"definition": "CREATE UNIQUE INDEX voucher_contact_challenges_token_hash_key ON public.voucher_contact_challenges USING btree (token_hash)"
+		},
+		{
+			"ready": true,
+			"table": "voucher_contact_challenges",
+			"valid": true,
+			"definition": "CREATE INDEX voucher_challenges_access ON public.voucher_contact_challenges USING btree (voucher_access_id)"
+		},
+		{
+			"ready": true,
+			"table": "voucher_contact_challenges",
+			"valid": true,
+			"definition": "CREATE INDEX voucher_challenges_contact ON public.voucher_contact_challenges USING btree (contact_id, voucher_access_id)"
+		},
+		{
+			"ready": true,
+			"table": "voucher_credential_deliveries",
+			"valid": true,
+			"definition": "CREATE UNIQUE INDEX voucher_credential_deliveries_pkey ON public.voucher_credential_deliveries USING btree (id)"
+		},
+		{
+			"ready": true,
+			"table": "voucher_credential_deliveries",
+			"valid": true,
+			"definition": "CREATE UNIQUE INDEX voucher_credential_deliveries_voucher_access_id_key ON public.voucher_credential_deliveries USING btree (voucher_access_id)"
+		},
+		{
+			"ready": true,
+			"table": "voucher_credential_deliveries",
+			"valid": true,
+			"definition": "CREATE UNIQUE INDEX voucher_credential_deliveries_guest_checkout_id_key ON public.voucher_credential_deliveries USING btree (guest_checkout_id)"
+		},
+		{
+			"ready": true,
+			"table": "voucher_credential_deliveries",
+			"valid": true,
+			"definition": "CREATE UNIQUE INDEX voucher_credential_deliveries_capability_hash_key ON public.voucher_credential_deliveries USING btree (capability_hash)"
+		},
+		{
+			"ready": true,
+			"table": "applicant_notification_links",
+			"valid": true,
+			"definition": "CREATE UNIQUE INDEX applicant_notification_links_pkey ON public.applicant_notification_links USING btree (notification_id)"
+		},
+		{
+			"ready": true,
+			"table": "applicant_notification_links",
+			"valid": true,
+			"definition": "CREATE INDEX applicant_notification_access ON public.applicant_notification_links USING btree (voucher_access_id)"
+		},
+		{
+			"ready": true,
+			"table": "applicant_notification_links",
+			"valid": true,
+			"definition": "CREATE INDEX applicant_notification_application ON public.applicant_notification_links USING btree (application_id) WHERE (application_id IS NOT NULL)"
+		},
+		{
+			"ready": true,
+			"table": "applicant_notification_links",
+			"valid": true,
+			"definition": "CREATE INDEX applicant_notification_payment ON public.applicant_notification_links USING btree (payment_id) WHERE (payment_id IS NOT NULL)"
+		}
+	],
+	"policies": [
+		{
+			"cmd": "SELECT",
+			"qual": "((user_id = auth.uid()) OR is_admin())",
+			"roles": [
+				"authenticated"
+			],
+			"tablename": "applicants",
+			"permissive": "PERMISSIVE",
+			"policyname": "owner_read",
+			"schemaname": "public",
+			"with_check": null
+		},
+		{
+			"cmd": "SELECT",
+			"qual": "(EXISTS ( SELECT 1\n   FROM applications a\n  WHERE ((a.id = application_education.application_id) AND ((a.user_id = auth.uid()) OR is_admin()))))",
+			"roles": [
+				"authenticated"
+			],
+			"tablename": "application_education",
+			"permissive": "PERMISSIVE",
+			"policyname": "application_owner_read",
+			"schemaname": "public",
+			"with_check": null
+		},
+		{
+			"cmd": "SELECT",
+			"qual": "(active OR is_admin())",
+			"roles": [
+				"public"
+			],
+			"tablename": "voucher_types",
+			"permissive": "PERMISSIVE",
+			"policyname": "types_read",
+			"schemaname": "public",
+			"with_check": null
+		},
+		{
+			"cmd": "SELECT",
+			"qual": "(EXISTS ( SELECT 1\n   FROM applications a\n  WHERE ((a.id = application_experience.application_id) AND ((a.user_id = auth.uid()) OR is_admin()))))",
+			"roles": [
+				"authenticated"
+			],
+			"tablename": "application_experience",
+			"permissive": "PERMISSIVE",
+			"policyname": "application_owner_read",
+			"schemaname": "public",
+			"with_check": null
+		},
+		{
+			"cmd": "SELECT",
+			"qual": "((user_id = auth.uid()) OR is_admin())",
+			"roles": [
+				"authenticated"
+			],
+			"tablename": "applications",
+			"permissive": "PERMISSIVE",
+			"policyname": "owner_read",
+			"schemaname": "public",
+			"with_check": null
+		},
+		{
+			"cmd": "SELECT",
+			"qual": "((user_id = auth.uid()) OR is_admin())",
+			"roles": [
+				"authenticated"
+			],
+			"tablename": "application_documents",
+			"permissive": "PERMISSIVE",
+			"policyname": "owner_read",
+			"schemaname": "public",
+			"with_check": null
+		},
+		{
+			"cmd": "SELECT",
+			"qual": "((status = 'published'::job_status) OR is_admin())",
+			"roles": [
+				"public"
+			],
+			"tablename": "jobs",
+			"permissive": "PERMISSIVE",
+			"policyname": "jobs_read",
+			"schemaname": "public",
+			"with_check": null
+		},
+		{
+			"cmd": "SELECT",
+			"qual": "(EXISTS ( SELECT 1\n   FROM applications a\n  WHERE ((a.id = application_answers.application_id) AND ((a.user_id = auth.uid()) OR is_admin()))))",
+			"roles": [
+				"authenticated"
+			],
+			"tablename": "application_answers",
+			"permissive": "PERMISSIVE",
+			"policyname": "application_owner_read",
+			"schemaname": "public",
+			"with_check": null
+		},
+		{
+			"cmd": "UPDATE",
+			"qual": "(id = auth.uid())",
+			"roles": [
+				"authenticated"
+			],
+			"tablename": "profiles",
+			"permissive": "PERMISSIVE",
+			"policyname": "profiles_edit",
+			"schemaname": "public",
+			"with_check": "(id = auth.uid())"
+		},
+		{
+			"cmd": "SELECT",
+			"qual": "((id = auth.uid()) OR is_admin())",
+			"roles": [
+				"authenticated"
+			],
+			"tablename": "profiles",
+			"permissive": "PERMISSIVE",
+			"policyname": "profiles_read",
+			"schemaname": "public",
+			"with_check": null
+		},
+		{
+			"cmd": "SELECT",
+			"qual": "(public OR is_admin())",
+			"roles": [
+				"public"
+			],
+			"tablename": "platform_settings",
+			"permissive": "PERMISSIVE",
+			"policyname": "settings_read",
+			"schemaname": "public",
+			"with_check": null
+		},
+		{
+			"cmd": "SELECT",
+			"qual": "is_admin()",
+			"roles": [
+				"authenticated"
+			],
+			"tablename": "admin_notes",
+			"permissive": "PERMISSIVE",
+			"policyname": "notes_admin_read",
+			"schemaname": "public",
+			"with_check": null
+		},
+		{
+			"cmd": "SELECT",
+			"qual": "((user_id = auth.uid()) OR is_admin())",
+			"roles": [
+				"authenticated"
+			],
+			"tablename": "vouchers",
+			"permissive": "PERMISSIVE",
+			"policyname": "owner_read",
+			"schemaname": "public",
+			"with_check": null
+		},
+		{
+			"cmd": "SELECT",
+			"qual": "((user_id = auth.uid()) OR is_admin())",
+			"roles": [
+				"authenticated"
+			],
+			"tablename": "notifications",
+			"permissive": "PERMISSIVE",
+			"policyname": "owner_read",
+			"schemaname": "public",
+			"with_check": null
+		},
+		{
+			"cmd": "SELECT",
+			"qual": "(EXISTS ( SELECT 1\n   FROM applications a\n  WHERE ((a.id = application_status_history.application_id) AND ((a.user_id = auth.uid()) OR is_admin()))))",
+			"roles": [
+				"authenticated"
+			],
+			"tablename": "application_status_history",
+			"permissive": "PERMISSIVE",
+			"policyname": "application_owner_read",
+			"schemaname": "public",
+			"with_check": null
+		},
+		{
+			"cmd": "SELECT",
+			"qual": "is_admin()",
+			"roles": [
+				"authenticated"
+			],
+			"tablename": "audit_logs",
+			"permissive": "PERMISSIVE",
+			"policyname": "audit_admin_read",
+			"schemaname": "public",
+			"with_check": null
+		},
+		{
+			"cmd": "SELECT",
+			"qual": "active",
+			"roles": [
+				"authenticated"
+			],
+			"tablename": "pricing_countries",
+			"permissive": "PERMISSIVE",
+			"policyname": "country_selection",
+			"schemaname": "public",
+			"with_check": null
+		},
+		{
+			"cmd": "SELECT",
+			"qual": "((user_id = auth.uid()) OR is_admin())",
+			"roles": [
+				"authenticated"
+			],
+			"tablename": "payments",
+			"permissive": "PERMISSIVE",
+			"policyname": "owner_read",
+			"schemaname": "public",
+			"with_check": null
+		},
+		{
+			"cmd": "SELECT",
+			"qual": "is_admin()",
+			"roles": [
+				"authenticated"
+			],
+			"tablename": "employers",
+			"permissive": "PERMISSIVE",
+			"policyname": "employers_admin_read",
+			"schemaname": "public",
+			"with_check": null
+		},
+		{
+			"cmd": "SELECT",
+			"qual": "is_admin()",
+			"roles": [
+				"authenticated"
+			],
+			"tablename": "employer_opportunities",
+			"permissive": "PERMISSIVE",
+			"policyname": "employer_opportunities_admin_read",
+			"schemaname": "public",
+			"with_check": null
+		},
+		{
+			"cmd": "SELECT",
+			"qual": "is_admin()",
+			"roles": [
+				"authenticated"
+			],
+			"tablename": "application_matches",
+			"permissive": "PERMISSIVE",
+			"policyname": "application_matches_admin_read",
+			"schemaname": "public",
+			"with_check": null
+		}
+	],
+	"triggers": [
+		{
+			"table": "jobs",
+			"enabled": "O",
+			"definition": "CREATE TRIGGER audit_mutation AFTER INSERT OR DELETE OR UPDATE ON public.jobs FOR EACH ROW EXECUTE FUNCTION audit_change()"
+		},
+		{
+			"table": "vouchers",
+			"enabled": "O",
+			"definition": "CREATE TRIGGER audit_mutation AFTER INSERT OR DELETE OR UPDATE ON public.vouchers FOR EACH ROW EXECUTE FUNCTION audit_change()"
+		},
+		{
+			"table": "admin_notes",
+			"enabled": "O",
+			"definition": "CREATE TRIGGER audit_mutation AFTER INSERT OR DELETE OR UPDATE ON public.admin_notes FOR EACH ROW EXECUTE FUNCTION audit_change()"
+		},
+		{
+			"table": "platform_settings",
+			"enabled": "O",
+			"definition": "CREATE TRIGGER audit_mutation AFTER INSERT OR DELETE OR UPDATE ON public.platform_settings FOR EACH ROW EXECUTE FUNCTION audit_change()"
+		},
+		{
+			"table": "profiles",
+			"enabled": "O",
+			"definition": "CREATE TRIGGER audit_mutation AFTER INSERT OR DELETE OR UPDATE ON public.profiles FOR EACH ROW EXECUTE FUNCTION audit_change()"
+		},
+		{
+			"table": "payments",
+			"enabled": "O",
+			"definition": "CREATE TRIGGER immutable_payment_snapshot BEFORE UPDATE ON public.payments FOR EACH ROW EXECUTE FUNCTION protect_payment_snapshot()"
+		},
+		{
+			"table": "payment_quotes",
+			"enabled": "O",
+			"definition": "CREATE TRIGGER immutable_payment_quote BEFORE UPDATE ON public.payment_quotes FOR EACH ROW EXECUTE FUNCTION protect_payment_quote()"
+		},
+		{
+			"table": "applications",
+			"enabled": "O",
+			"definition": "CREATE TRIGGER application_managed_boundary BEFORE INSERT OR UPDATE ON public.applications FOR EACH ROW EXECUTE FUNCTION guard_managed_application()"
+		},
+		{
+			"table": "guest_checkouts",
+			"enabled": "O",
+			"definition": "CREATE TRIGGER guest_checkout_binding BEFORE UPDATE ON public.guest_checkouts FOR EACH ROW EXECUTE FUNCTION guard_guest_checkout_binding()"
+		},
+		{
+			"table": "vouchers",
+			"enabled": "O",
+			"definition": "CREATE TRIGGER preserve_applicant_owner BEFORE UPDATE ON public.vouchers FOR EACH ROW EXECUTE FUNCTION guard_applicant_owner_identity()"
+		},
+		{
+			"table": "applicants",
+			"enabled": "O",
+			"definition": "CREATE TRIGGER preserve_applicant_owner BEFORE UPDATE ON public.applicants FOR EACH ROW EXECUTE FUNCTION guard_applicant_owner_identity()"
+		},
+		{
+			"table": "applications",
+			"enabled": "O",
+			"definition": "CREATE TRIGGER preserve_applicant_owner BEFORE UPDATE ON public.applications FOR EACH ROW EXECUTE FUNCTION guard_applicant_owner_identity()"
+		},
+		{
+			"table": "application_documents",
+			"enabled": "O",
+			"definition": "CREATE TRIGGER preserve_applicant_owner BEFORE UPDATE ON public.application_documents FOR EACH ROW EXECUTE FUNCTION guard_applicant_owner_identity()"
+		},
+		{
+			"table": "notifications",
+			"enabled": "O",
+			"definition": "CREATE TRIGGER preserve_applicant_owner BEFORE UPDATE ON public.notifications FOR EACH ROW EXECUTE FUNCTION guard_applicant_owner_identity()"
+		},
+		{
+			"table": "voucher_access",
+			"enabled": "O",
+			"definition": "CREATE TRIGGER voucher_access_binding BEFORE INSERT OR UPDATE ON public.voucher_access FOR EACH ROW EXECUTE FUNCTION guard_voucher_access_binding()"
+		},
+		{
+			"table": "applicant_sessions",
+			"enabled": "O",
+			"definition": "CREATE TRIGGER applicant_session_bounds BEFORE UPDATE ON public.applicant_sessions FOR EACH ROW EXECUTE FUNCTION guard_applicant_session_bounds()"
+		},
+		{
+			"table": "voucher_contacts",
+			"enabled": "O",
+			"definition": "CREATE TRIGGER voucher_contact_binding BEFORE UPDATE ON public.voucher_contacts FOR EACH ROW EXECUTE FUNCTION guard_voucher_contact_binding()"
+		},
+		{
+			"table": "voucher_contact_challenges",
+			"enabled": "O",
+			"definition": "CREATE TRIGGER voucher_challenge_binding BEFORE UPDATE ON public.voucher_contact_challenges FOR EACH ROW EXECUTE FUNCTION guard_voucher_challenge_binding()"
+		},
+		{
+			"table": "voucher_credential_deliveries",
+			"enabled": "O",
+			"definition": "CREATE TRIGGER credential_delivery_binding BEFORE INSERT OR UPDATE ON public.voucher_credential_deliveries FOR EACH ROW EXECUTE FUNCTION guard_credential_delivery_binding()"
+		},
+		{
+			"table": "applicant_notification_links",
+			"enabled": "O",
+			"definition": "CREATE TRIGGER applicant_notification_binding BEFORE INSERT OR UPDATE ON public.applicant_notification_links FOR EACH ROW EXECUTE FUNCTION guard_applicant_notification_binding()"
+		}
+	],
+	"constraints": [
+		{
+			"name": "payments_job_id_fkey",
+			"type": "f",
+			"table": "payments",
+			"validated": true,
+			"definition": "FOREIGN KEY (job_id) REFERENCES jobs(id)"
+		},
+		{
+			"name": "vouchers_pkey",
+			"type": "p",
+			"table": "vouchers",
+			"validated": true,
+			"definition": "PRIMARY KEY (id)"
+		},
+		{
+			"name": "vouchers_serial_key",
+			"type": "u",
+			"table": "vouchers",
+			"validated": true,
+			"definition": "UNIQUE (serial)"
+		},
+		{
+			"name": "vouchers_payment_id_key",
+			"type": "u",
+			"table": "vouchers",
+			"validated": true,
+			"definition": "UNIQUE (payment_id)"
+		},
+		{
+			"name": "vouchers_user_id_fkey",
+			"type": "f",
+			"table": "vouchers",
+			"validated": true,
+			"definition": "FOREIGN KEY (user_id) REFERENCES profiles(id)"
+		},
+		{
+			"name": "vouchers_payment_id_fkey",
+			"type": "f",
+			"table": "vouchers",
+			"validated": true,
+			"definition": "FOREIGN KEY (payment_id) REFERENCES payments(id)"
+		},
+		{
+			"name": "vouchers_voucher_type_id_fkey",
+			"type": "f",
+			"table": "vouchers",
+			"validated": true,
+			"definition": "FOREIGN KEY (voucher_type_id) REFERENCES voucher_types(id)"
+		},
+		{
+			"name": "vouchers_job_id_fkey",
+			"type": "f",
+			"table": "vouchers",
+			"validated": true,
+			"definition": "FOREIGN KEY (job_id) REFERENCES jobs(id)"
+		},
+		{
+			"name": "applicants_pkey",
+			"type": "p",
+			"table": "applicants",
+			"validated": true,
+			"definition": "PRIMARY KEY (id)"
+		},
+		{
+			"name": "applicants_user_id_key",
+			"type": "u",
+			"table": "applicants",
+			"validated": true,
+			"definition": "UNIQUE (user_id)"
+		},
+		{
+			"name": "applicants_user_id_fkey",
+			"type": "f",
+			"table": "applicants",
+			"validated": true,
+			"definition": "FOREIGN KEY (user_id) REFERENCES profiles(id)"
+		},
+		{
+			"name": "applications_pkey",
+			"type": "p",
+			"table": "applications",
+			"validated": true,
+			"definition": "PRIMARY KEY (id)"
+		},
+		{
+			"name": "applications_reference_key",
+			"type": "u",
+			"table": "applications",
+			"validated": true,
+			"definition": "UNIQUE (reference)"
+		},
+		{
+			"name": "applications_voucher_id_key",
+			"type": "u",
+			"table": "applications",
+			"validated": true,
+			"definition": "UNIQUE (voucher_id)"
+		},
+		{
+			"name": "applications_user_id_fkey",
+			"type": "f",
+			"table": "applications",
+			"validated": true,
+			"definition": "FOREIGN KEY (user_id) REFERENCES profiles(id)"
+		},
+		{
+			"name": "applications_job_id_fkey",
+			"type": "f",
+			"table": "applications",
+			"validated": true,
+			"definition": "FOREIGN KEY (job_id) REFERENCES jobs(id)"
+		},
+		{
+			"name": "profiles_pkey",
+			"type": "p",
+			"table": "profiles",
+			"validated": true,
+			"definition": "PRIMARY KEY (id)"
+		},
+		{
+			"name": "profiles_id_fkey",
+			"type": "f",
+			"table": "profiles",
+			"validated": true,
+			"definition": "FOREIGN KEY (id) REFERENCES auth.users(id) ON DELETE CASCADE"
+		},
+		{
+			"name": "jobs_minimum_age_check",
+			"type": "c",
+			"table": "jobs",
+			"validated": true,
+			"definition": "CHECK ((minimum_age >= 16))"
+		},
+		{
+			"name": "jobs_currency_check",
+			"type": "c",
+			"table": "jobs",
+			"validated": true,
+			"definition": "CHECK ((currency ~ '^[A-Z]{3}$'::text))"
+		},
+		{
+			"name": "jobs_openings_check",
+			"type": "c",
+			"table": "jobs",
+			"validated": true,
+			"definition": "CHECK ((openings > 0))"
+		},
+		{
+			"name": "jobs_pkey",
+			"type": "p",
+			"table": "jobs",
+			"validated": true,
+			"definition": "PRIMARY KEY (id)"
+		},
+		{
+			"name": "jobs_slug_key",
+			"type": "u",
+			"table": "jobs",
+			"validated": true,
+			"definition": "UNIQUE (slug)"
+		},
+		{
+			"name": "voucher_types_amount_check",
+			"type": "c",
+			"table": "voucher_types",
+			"validated": true,
+			"definition": "CHECK ((amount > 0))"
+		},
+		{
+			"name": "voucher_types_currency_check",
+			"type": "c",
+			"table": "voucher_types",
+			"validated": true,
+			"definition": "CHECK ((currency ~ '^[A-Z]{3}$'::text))"
+		},
+		{
+			"name": "voucher_types_validity_days_check",
+			"type": "c",
+			"table": "voucher_types",
+			"validated": true,
+			"definition": "CHECK (((validity_days >= 1) AND (validity_days <= 1095)))"
+		},
+		{
+			"name": "voucher_types_pkey",
+			"type": "p",
+			"table": "voucher_types",
+			"validated": true,
+			"definition": "PRIMARY KEY (id)"
+		},
+		{
+			"name": "payments_amount_check",
+			"type": "c",
+			"table": "payments",
+			"validated": true,
+			"definition": "CHECK ((amount > 0))"
+		},
+		{
+			"name": "payments_currency_check",
+			"type": "c",
+			"table": "payments",
+			"validated": true,
+			"definition": "CHECK ((currency ~ '^[A-Z]{3}$'::text))"
+		},
+		{
+			"name": "payments_pkey",
+			"type": "p",
+			"table": "payments",
+			"validated": true,
+			"definition": "PRIMARY KEY (id)"
+		},
+		{
+			"name": "payments_reference_key",
+			"type": "u",
+			"table": "payments",
+			"validated": true,
+			"definition": "UNIQUE (reference)"
+		},
+		{
+			"name": "payments_user_id_fkey",
+			"type": "f",
+			"table": "payments",
+			"validated": true,
+			"definition": "FOREIGN KEY (user_id) REFERENCES profiles(id)"
+		},
+		{
+			"name": "payments_voucher_type_id_fkey",
+			"type": "f",
+			"table": "payments",
+			"validated": true,
+			"definition": "FOREIGN KEY (voucher_type_id) REFERENCES voucher_types(id)"
+		},
+		{
+			"name": "applications_voucher_id_fkey",
+			"type": "f",
+			"table": "applications",
+			"validated": true,
+			"definition": "FOREIGN KEY (voucher_id) REFERENCES vouchers(id)"
+		},
+		{
+			"name": "application_education_check",
+			"type": "c",
+			"table": "application_education",
+			"validated": true,
+			"definition": "CHECK (((completion_date IS NULL) OR (start_date IS NULL) OR (completion_date >= start_date)))"
+		},
+		{
+			"name": "application_education_pkey",
+			"type": "p",
+			"table": "application_education",
+			"validated": true,
+			"definition": "PRIMARY KEY (id)"
+		},
+		{
+			"name": "application_education_application_id_fkey",
+			"type": "f",
+			"table": "application_education",
+			"validated": true,
+			"definition": "FOREIGN KEY (application_id) REFERENCES applications(id) ON DELETE CASCADE"
+		},
+		{
+			"name": "application_experience_check",
+			"type": "c",
+			"table": "application_experience",
+			"validated": true,
+			"definition": "CHECK (((end_date IS NULL) OR (start_date IS NULL) OR (end_date >= start_date)))"
+		},
+		{
+			"name": "application_experience_pkey",
+			"type": "p",
+			"table": "application_experience",
+			"validated": true,
+			"definition": "PRIMARY KEY (id)"
+		},
+		{
+			"name": "application_experience_application_id_fkey",
+			"type": "f",
+			"table": "application_experience",
+			"validated": true,
+			"definition": "FOREIGN KEY (application_id) REFERENCES applications(id) ON DELETE CASCADE"
+		},
+		{
+			"name": "application_documents_mime_type_check",
+			"type": "c",
+			"table": "application_documents",
+			"validated": true,
+			"definition": "CHECK ((mime_type = ANY (ARRAY['application/pdf'::text, 'image/jpeg'::text, 'image/png'::text])))"
+		},
+		{
+			"name": "application_documents_size_bytes_check",
+			"type": "c",
+			"table": "application_documents",
+			"validated": true,
+			"definition": "CHECK (((size_bytes >= 1) AND (size_bytes <= 10485760)))"
+		},
+		{
+			"name": "application_documents_pkey",
+			"type": "p",
+			"table": "application_documents",
+			"validated": true,
+			"definition": "PRIMARY KEY (id)"
+		},
+		{
+			"name": "application_documents_storage_path_key",
+			"type": "u",
+			"table": "application_documents",
+			"validated": true,
+			"definition": "UNIQUE (storage_path)"
+		},
+		{
+			"name": "application_documents_application_id_fkey",
+			"type": "f",
+			"table": "application_documents",
+			"validated": true,
+			"definition": "FOREIGN KEY (application_id) REFERENCES applications(id) ON DELETE CASCADE"
+		},
+		{
+			"name": "application_documents_user_id_fkey",
+			"type": "f",
+			"table": "application_documents",
+			"validated": true,
+			"definition": "FOREIGN KEY (user_id) REFERENCES profiles(id)"
+		},
+		{
+			"name": "application_answers_pkey",
+			"type": "p",
+			"table": "application_answers",
+			"validated": true,
+			"definition": "PRIMARY KEY (application_id, question_id)"
+		},
+		{
+			"name": "application_answers_application_id_fkey",
+			"type": "f",
+			"table": "application_answers",
+			"validated": true,
+			"definition": "FOREIGN KEY (application_id) REFERENCES applications(id) ON DELETE CASCADE"
+		},
+		{
+			"name": "application_status_history_pkey",
+			"type": "p",
+			"table": "application_status_history",
+			"validated": true,
+			"definition": "PRIMARY KEY (id)"
+		},
+		{
+			"name": "application_status_history_application_id_fkey",
+			"type": "f",
+			"table": "application_status_history",
+			"validated": true,
+			"definition": "FOREIGN KEY (application_id) REFERENCES applications(id)"
+		},
+		{
+			"name": "application_status_history_actor_id_fkey",
+			"type": "f",
+			"table": "application_status_history",
+			"validated": true,
+			"definition": "FOREIGN KEY (actor_id) REFERENCES profiles(id)"
+		},
+		{
+			"name": "notifications_pkey",
+			"type": "p",
+			"table": "notifications",
+			"validated": true,
+			"definition": "PRIMARY KEY (id)"
+		},
+		{
+			"name": "notifications_user_id_fkey",
+			"type": "f",
+			"table": "notifications",
+			"validated": true,
+			"definition": "FOREIGN KEY (user_id) REFERENCES profiles(id)"
+		},
+		{
+			"name": "admin_notes_pkey",
+			"type": "p",
+			"table": "admin_notes",
+			"validated": true,
+			"definition": "PRIMARY KEY (id)"
+		},
+		{
+			"name": "admin_notes_application_id_fkey",
+			"type": "f",
+			"table": "admin_notes",
+			"validated": true,
+			"definition": "FOREIGN KEY (application_id) REFERENCES applications(id)"
+		},
+		{
+			"name": "admin_notes_actor_id_fkey",
+			"type": "f",
+			"table": "admin_notes",
+			"validated": true,
+			"definition": "FOREIGN KEY (actor_id) REFERENCES profiles(id)"
+		},
+		{
+			"name": "audit_logs_pkey",
+			"type": "p",
+			"table": "audit_logs",
+			"validated": true,
+			"definition": "PRIMARY KEY (id)"
+		},
+		{
+			"name": "audit_logs_actor_id_fkey",
+			"type": "f",
+			"table": "audit_logs",
+			"validated": true,
+			"definition": "FOREIGN KEY (actor_id) REFERENCES profiles(id)"
+		},
+		{
+			"name": "platform_settings_pkey",
+			"type": "p",
+			"table": "platform_settings",
+			"validated": true,
+			"definition": "PRIMARY KEY (key)"
+		},
+		{
+			"name": "payments_validity_days_check",
+			"type": "c",
+			"table": "payments",
+			"validated": true,
+			"definition": "CHECK (((validity_days >= 1) AND (validity_days <= 1095)))"
+		},
+		{
+			"name": "request_limits_attempts_check",
+			"type": "c",
+			"table": "request_limits",
+			"validated": true,
+			"definition": "CHECK ((attempts > 0))"
+		},
+		{
+			"name": "request_limits_pkey",
+			"type": "p",
+			"table": "request_limits",
+			"validated": true,
+			"definition": "PRIMARY KEY (key)"
+		},
+		{
+			"name": "voucher_types_code_key",
+			"type": "u",
+			"table": "voucher_types",
+			"validated": true,
+			"definition": "UNIQUE (code)"
+		},
+		{
+			"name": "active_voucher_requires_price",
+			"type": "c",
+			"table": "voucher_types",
+			"validated": true,
+			"definition": "CHECK (((NOT active) OR (amount IS NOT NULL)))"
+		},
+		{
+			"name": "pricing_currencies_code_check",
+			"type": "c",
+			"table": "pricing_currencies",
+			"validated": true,
+			"definition": "CHECK ((code ~ '^[A-Z]{3}$'::text))"
+		},
+		{
+			"name": "pricing_currencies_minor_units_check",
+			"type": "c",
+			"table": "pricing_currencies",
+			"validated": true,
+			"definition": "CHECK (((minor_units >= 0) AND (minor_units <= 4)))"
+		},
+		{
+			"name": "pricing_currencies_pkey",
+			"type": "p",
+			"table": "pricing_currencies",
+			"validated": true,
+			"definition": "PRIMARY KEY (code)"
+		},
+		{
+			"name": "pricing_regions_pkey",
+			"type": "p",
+			"table": "pricing_regions",
+			"validated": true,
+			"definition": "PRIMARY KEY (id)"
+		},
+		{
+			"name": "pricing_regions_code_key",
+			"type": "u",
+			"table": "pricing_regions",
+			"validated": true,
+			"definition": "UNIQUE (code)"
+		},
+		{
+			"name": "pricing_regions_display_currency_fkey",
+			"type": "f",
+			"table": "pricing_regions",
+			"validated": true,
+			"definition": "FOREIGN KEY (display_currency) REFERENCES pricing_currencies(code)"
+		},
+		{
+			"name": "pricing_countries_code_check",
+			"type": "c",
+			"table": "pricing_countries",
+			"validated": true,
+			"definition": "CHECK ((code ~ '^[A-Z]{2}$'::text))"
+		},
+		{
+			"name": "pricing_countries_pkey",
+			"type": "p",
+			"table": "pricing_countries",
+			"validated": true,
+			"definition": "PRIMARY KEY (code)"
+		},
+		{
+			"name": "pricing_countries_region_id_fkey",
+			"type": "f",
+			"table": "pricing_countries",
+			"validated": true,
+			"definition": "FOREIGN KEY (region_id) REFERENCES pricing_regions(id)"
+		},
+		{
+			"name": "voucher_price_overrides_charge_amount_check",
+			"type": "c",
+			"table": "voucher_price_overrides",
+			"validated": true,
+			"definition": "CHECK ((charge_amount > 0))"
+		},
+		{
+			"name": "applications_revision_check",
+			"type": "c",
+			"table": "applications",
+			"validated": true,
+			"definition": "CHECK ((revision >= 0))"
+		},
+		{
+			"name": "guest_checkouts_id_applicant_id_key",
+			"type": "u",
+			"table": "guest_checkouts",
+			"validated": true,
+			"definition": "UNIQUE (id, applicant_id)"
+		},
+		{
+			"name": "voucher_price_overrides_check",
+			"type": "c",
+			"table": "voucher_price_overrides",
+			"validated": true,
+			"definition": "CHECK (((((country_code IS NOT NULL))::integer + ((region_id IS NOT NULL))::integer) = 1))"
+		},
+		{
+			"name": "voucher_price_overrides_pkey",
+			"type": "p",
+			"table": "voucher_price_overrides",
+			"validated": true,
+			"definition": "PRIMARY KEY (id)"
+		},
+		{
+			"name": "voucher_price_overrides_voucher_type_id_fkey",
+			"type": "f",
+			"table": "voucher_price_overrides",
+			"validated": true,
+			"definition": "FOREIGN KEY (voucher_type_id) REFERENCES voucher_types(id)"
+		},
+		{
+			"name": "voucher_price_overrides_country_code_fkey",
+			"type": "f",
+			"table": "voucher_price_overrides",
+			"validated": true,
+			"definition": "FOREIGN KEY (country_code) REFERENCES pricing_countries(code)"
+		},
+		{
+			"name": "voucher_price_overrides_region_id_fkey",
+			"type": "f",
+			"table": "voucher_price_overrides",
+			"validated": true,
+			"definition": "FOREIGN KEY (region_id) REFERENCES pricing_regions(id)"
+		},
+		{
+			"name": "pricing_exchange_rates_base_currency_check",
+			"type": "c",
+			"table": "pricing_exchange_rates",
+			"validated": true,
+			"definition": "CHECK ((base_currency = 'GHS'::text))"
+		},
+		{
+			"name": "pricing_exchange_rates_rate_check",
+			"type": "c",
+			"table": "pricing_exchange_rates",
+			"validated": true,
+			"definition": "CHECK (((rate > (0)::numeric) AND (rate <= (1000000)::numeric)))"
+		},
+		{
+			"name": "pricing_exchange_rates_source_check",
+			"type": "c",
+			"table": "pricing_exchange_rates",
+			"validated": true,
+			"definition": "CHECK (((length(source) >= 1) AND (length(source) <= 200)))"
+		},
+		{
+			"name": "pricing_exchange_rates_check",
+			"type": "c",
+			"table": "pricing_exchange_rates",
+			"validated": true,
+			"definition": "CHECK ((valid_until > as_of))"
+		},
+		{
+			"name": "pricing_exchange_rates_quote_currency_check",
+			"type": "c",
+			"table": "pricing_exchange_rates",
+			"validated": true,
+			"definition": "CHECK ((quote_currency <> 'GHS'::text))"
+		},
+		{
+			"name": "pricing_exchange_rates_pkey",
+			"type": "p",
+			"table": "pricing_exchange_rates",
+			"validated": true,
+			"definition": "PRIMARY KEY (quote_currency)"
+		},
+		{
+			"name": "pricing_exchange_rates_quote_currency_fkey",
+			"type": "f",
+			"table": "pricing_exchange_rates",
+			"validated": true,
+			"definition": "FOREIGN KEY (quote_currency) REFERENCES pricing_currencies(code)"
+		},
+		{
+			"name": "payment_quotes_validity_days_check",
+			"type": "c",
+			"table": "payment_quotes",
+			"validated": true,
+			"definition": "CHECK (((validity_days >= 1) AND (validity_days <= 1095)))"
+		},
+		{
+			"name": "payment_quotes_price_source_check",
+			"type": "c",
+			"table": "payment_quotes",
+			"validated": true,
+			"definition": "CHECK ((price_source = ANY (ARRAY['base'::text, 'region'::text, 'country'::text])))"
+		},
+		{
+			"name": "payment_quotes_charge_amount_check",
+			"type": "c",
+			"table": "payment_quotes",
+			"validated": true,
+			"definition": "CHECK ((charge_amount > 0))"
+		},
+		{
+			"name": "payment_quotes_charge_currency_check",
+			"type": "c",
+			"table": "payment_quotes",
+			"validated": true,
+			"definition": "CHECK ((charge_currency = 'GHS'::text))"
+		},
+		{
+			"name": "payment_quotes_display_amount_check",
+			"type": "c",
+			"table": "payment_quotes",
+			"validated": true,
+			"definition": "CHECK (((display_amount >= 1) AND (display_amount <= '9007199254740991'::bigint)))"
+		},
+		{
+			"name": "payment_quotes_display_minor_units_check",
+			"type": "c",
+			"table": "payment_quotes",
+			"validated": true,
+			"definition": "CHECK (((display_minor_units >= 0) AND (display_minor_units <= 4)))"
+		},
+		{
+			"name": "payment_quotes_check",
+			"type": "c",
+			"table": "payment_quotes",
+			"validated": true,
+			"definition": "CHECK ((expires_at > created_at))"
+		},
+		{
+			"name": "payment_quotes_pkey",
+			"type": "p",
+			"table": "payment_quotes",
+			"validated": true,
+			"definition": "PRIMARY KEY (id)"
+		},
+		{
+			"name": "payment_quotes_user_id_fkey",
+			"type": "f",
+			"table": "payment_quotes",
+			"validated": true,
+			"definition": "FOREIGN KEY (user_id) REFERENCES profiles(id)"
+		},
+		{
+			"name": "payment_quotes_voucher_type_id_fkey",
+			"type": "f",
+			"table": "payment_quotes",
+			"validated": true,
+			"definition": "FOREIGN KEY (voucher_type_id) REFERENCES voucher_types(id)"
+		},
+		{
+			"name": "payment_quotes_country_code_fkey",
+			"type": "f",
+			"table": "payment_quotes",
+			"validated": true,
+			"definition": "FOREIGN KEY (country_code) REFERENCES pricing_countries(code)"
+		},
+		{
+			"name": "payment_quotes_display_currency_fkey",
+			"type": "f",
+			"table": "payment_quotes",
+			"validated": true,
+			"definition": "FOREIGN KEY (display_currency) REFERENCES pricing_currencies(code)"
+		},
+		{
+			"name": "payments_quote_id_key",
+			"type": "u",
+			"table": "payments",
+			"validated": true,
+			"definition": "UNIQUE (quote_id)"
+		},
+		{
+			"name": "payments_quote_id_fkey",
+			"type": "f",
+			"table": "payments",
+			"validated": true,
+			"definition": "FOREIGN KEY (quote_id) REFERENCES payment_quotes(id)"
+		},
+		{
+			"name": "quoted_payment_has_snapshot",
+			"type": "c",
+			"table": "payments",
+			"validated": true,
+			"definition": "CHECK (((quote_id IS NULL) OR ((currency = 'GHS'::text) AND (product_name IS NOT NULL) AND (country_code IS NOT NULL) AND (price_source = ANY (ARRAY['base'::text, 'region'::text, 'country'::text])) AND (price_source IS NOT NULL) AND (display_amount IS NOT NULL) AND ((display_amount >= 1) AND (display_amount <= '9007199254740991'::bigint)) AND (display_currency IS NOT NULL) AND (display_currency ~ '^[A-Z]{3}$'::text) AND (display_minor_units IS NOT NULL) AND ((display_minor_units >= 0) AND (display_minor_units <= 4)) AND ((display_currency = 'GHS'::text) OR ((exchange_rate IS NOT NULL) AND (exchange_rate > (0)::numeric) AND (exchange_rate_source IS NOT NULL) AND (exchange_rate_as_of IS NOT NULL))))))"
+		},
+		{
+			"name": "guest_checkouts_applicant_id_fkey",
+			"type": "f",
+			"table": "guest_checkouts",
+			"validated": true,
+			"definition": "FOREIGN KEY (applicant_id) REFERENCES applicant_principals(id)"
+		},
+		{
+			"name": "jobs_required_documents_check",
+			"type": "c",
+			"table": "jobs",
+			"validated": true,
+			"definition": "CHECK ((required_documents <@ ARRAY['cv'::text, 'passport'::text, 'certificate'::text, 'photo'::text, 'supporting'::text]))"
+		},
+		{
+			"name": "jobs_opportunity_type_check",
+			"type": "c",
+			"table": "jobs",
+			"validated": true,
+			"definition": "CHECK ((opportunity_type = ANY (ARRAY['managed'::text, 'research'::text])))"
+		},
+		{
+			"name": "published_managed_opportunity",
+			"type": "c",
+			"table": "jobs",
+			"validated": true,
+			"definition": "CHECK (((status <> 'published'::job_status) OR ((opportunity_type = 'managed'::text) AND ((length(btrim(COALESCE(service_description, ''::text))) >= 40) AND (length(btrim(COALESCE(service_description, ''::text))) <= 5000)))))"
+		},
+		{
+			"name": "opportunity_source_https",
+			"type": "c",
+			"table": "jobs",
+			"validated": true,
+			"definition": "CHECK (((source_url IS NULL) OR (source_url ~ '^https://[^[:space:]]+$'::text)))"
+		},
+		{
+			"name": "employers_name_check",
+			"type": "c",
+			"table": "employers",
+			"validated": true,
+			"definition": "CHECK (((length(btrim(name)) >= 2) AND (length(btrim(name)) <= 200)))"
+		},
+		{
+			"name": "employers_website_check",
+			"type": "c",
+			"table": "employers",
+			"validated": true,
+			"definition": "CHECK (((website IS NULL) OR (website ~ '^https://[^[:space:]]+$'::text)))"
+		},
+		{
+			"name": "employers_pkey",
+			"type": "p",
+			"table": "employers",
+			"validated": true,
+			"definition": "PRIMARY KEY (id)"
+		},
+		{
+			"name": "application_review_commands_expected_revision_check",
+			"type": "c",
+			"table": "application_review_commands",
+			"validated": true,
+			"definition": "CHECK ((expected_revision >= 0))"
+		},
+		{
+			"name": "guest_checkouts_country_code_fkey",
+			"type": "f",
+			"table": "guest_checkouts",
+			"validated": true,
+			"definition": "FOREIGN KEY (country_code) REFERENCES pricing_countries(code)"
+		},
+		{
+			"name": "payment_quotes_applicant_id_fkey",
+			"type": "f",
+			"table": "payment_quotes",
+			"validated": true,
+			"definition": "FOREIGN KEY (applicant_id) REFERENCES applicant_principals(id)"
+		},
+		{
+			"name": "employer_opportunities_title_check",
+			"type": "c",
+			"table": "employer_opportunities",
+			"validated": true,
+			"definition": "CHECK (((length(btrim(title)) >= 2) AND (length(btrim(title)) <= 200)))"
+		},
+		{
+			"name": "employer_opportunities_source_url_check",
+			"type": "c",
+			"table": "employer_opportunities",
+			"validated": true,
+			"definition": "CHECK ((source_url ~ '^https://[^[:space:]]+$'::text))"
+		},
+		{
+			"name": "employer_opportunities_status_check",
+			"type": "c",
+			"table": "employer_opportunities",
+			"validated": true,
+			"definition": "CHECK ((status = ANY (ARRAY['research'::text, 'verified'::text, 'closed'::text])))"
+		},
+		{
+			"name": "employer_opportunities_check",
+			"type": "c",
+			"table": "employer_opportunities",
+			"validated": true,
+			"definition": "CHECK (((NOT referral_authorized) OR (length(btrim(COALESCE(authorization_evidence, ''::text))) >= 10)))"
+		},
+		{
+			"name": "employer_opportunities_pkey",
+			"type": "p",
+			"table": "employer_opportunities",
+			"validated": true,
+			"definition": "PRIMARY KEY (id)"
+		},
+		{
+			"name": "employer_opportunities_employer_id_fkey",
+			"type": "f",
+			"table": "employer_opportunities",
+			"validated": true,
+			"definition": "FOREIGN KEY (employer_id) REFERENCES employers(id)"
+		},
+		{
+			"name": "application_matches_status_check",
+			"type": "c",
+			"table": "application_matches",
+			"validated": true,
+			"definition": "CHECK ((status = ANY (ARRAY['proposed'::text, 'qualified'::text, 'shortlisted'::text, 'referred'::text, 'closed'::text])))"
+		},
+		{
+			"name": "application_matches_pkey",
+			"type": "p",
+			"table": "application_matches",
+			"validated": true,
+			"definition": "PRIMARY KEY (id)"
+		},
+		{
+			"name": "application_matches_application_id_employer_opportunity_id_key",
+			"type": "u",
+			"table": "application_matches",
+			"validated": true,
+			"definition": "UNIQUE (application_id, employer_opportunity_id)"
+		},
+		{
+			"name": "application_matches_application_id_fkey",
+			"type": "f",
+			"table": "application_matches",
+			"validated": true,
+			"definition": "FOREIGN KEY (application_id) REFERENCES applications(id)"
+		},
+		{
+			"name": "application_matches_employer_opportunity_id_fkey",
+			"type": "f",
+			"table": "application_matches",
+			"validated": true,
+			"definition": "FOREIGN KEY (employer_opportunity_id) REFERENCES employer_opportunities(id)"
+		},
+		{
+			"name": "application_matches_created_by_fkey",
+			"type": "f",
+			"table": "application_matches",
+			"validated": true,
+			"definition": "FOREIGN KEY (created_by) REFERENCES profiles(id)"
+		},
+		{
+			"name": "guest_checkouts_pkey",
+			"type": "p",
+			"table": "guest_checkouts",
+			"validated": true,
+			"definition": "PRIMARY KEY (id)"
+		},
+		{
+			"name": "guest_checkouts_applicant_id_key",
+			"type": "u",
+			"table": "guest_checkouts",
+			"validated": true,
+			"definition": "UNIQUE (applicant_id)"
+		},
+		{
+			"name": "guest_checkouts_capability_hash_key",
+			"type": "u",
+			"table": "guest_checkouts",
+			"validated": true,
+			"definition": "UNIQUE (capability_hash)"
+		},
+		{
+			"name": "application_review_commands_applicant_message_check",
+			"type": "c",
+			"table": "application_review_commands",
+			"validated": true,
+			"definition": "CHECK (((length(btrim(applicant_message)) >= 10) AND (length(btrim(applicant_message)) <= 2000)))"
+		},
+		{
+			"name": "application_review_commands_pkey",
+			"type": "p",
+			"table": "application_review_commands",
+			"validated": true,
+			"definition": "PRIMARY KEY (request_id)"
+		},
+		{
+			"name": "application_review_commands_application_id_fkey",
+			"type": "f",
+			"table": "application_review_commands",
+			"validated": true,
+			"definition": "FOREIGN KEY (application_id) REFERENCES applications(id)"
+		},
+		{
+			"name": "application_review_commands_actor_id_fkey",
+			"type": "f",
+			"table": "application_review_commands",
+			"validated": true,
+			"definition": "FOREIGN KEY (actor_id) REFERENCES profiles(id)"
+		},
+		{
+			"name": "admin_notes_context_revision_check",
+			"type": "c",
+			"table": "admin_notes",
+			"validated": true,
+			"definition": "CHECK ((context_revision >= 0))"
+		},
+		{
+			"name": "applicant_principals_display_name_check",
+			"type": "c",
+			"table": "applicant_principals",
+			"validated": true,
+			"definition": "CHECK ((length(display_name) <= 200))"
+		},
+		{
+			"name": "applicant_principals_pkey",
+			"type": "p",
+			"table": "applicant_principals",
+			"validated": true,
+			"definition": "PRIMARY KEY (id)"
+		},
+		{
+			"name": "guest_checkouts_capability_hash_check",
+			"type": "c",
+			"table": "guest_checkouts",
+			"validated": true,
+			"definition": "CHECK ((capability_hash ~ '^[a-f0-9]{64}$'::text))"
+		},
+		{
+			"name": "guest_checkouts_contact_email_check",
+			"type": "c",
+			"table": "guest_checkouts",
+			"validated": true,
+			"definition": "CHECK (((length(btrim(contact_email)) >= 3) AND (length(btrim(contact_email)) <= 254)))"
+		},
+		{
+			"name": "guest_checkouts_contact_name_check",
+			"type": "c",
+			"table": "guest_checkouts",
+			"validated": true,
+			"definition": "CHECK ((length(contact_name) <= 200))"
+		},
+		{
+			"name": "guest_checkouts_contact_phone_check",
+			"type": "c",
+			"table": "guest_checkouts",
+			"validated": true,
+			"definition": "CHECK ((length(contact_phone) <= 40))"
+		},
+		{
+			"name": "guest_checkouts_check",
+			"type": "c",
+			"table": "guest_checkouts",
+			"validated": true,
+			"definition": "CHECK ((expires_at > created_at))"
+		},
+		{
+			"name": "payment_quotes_one_owner",
+			"type": "c",
+			"table": "payment_quotes",
+			"validated": true,
+			"definition": "CHECK (((user_id IS NOT NULL) <> (applicant_id IS NOT NULL)))"
+		},
+		{
+			"name": "payments_applicant_id_fkey",
+			"type": "f",
+			"table": "payments",
+			"validated": true,
+			"definition": "FOREIGN KEY (applicant_id) REFERENCES applicant_principals(id)"
+		},
+		{
+			"name": "payments_one_owner",
+			"type": "c",
+			"table": "payments",
+			"validated": true,
+			"definition": "CHECK (((user_id IS NOT NULL) <> (applicant_id IS NOT NULL)))"
+		},
+		{
+			"name": "vouchers_applicant_id_fkey",
+			"type": "f",
+			"table": "vouchers",
+			"validated": true,
+			"definition": "FOREIGN KEY (applicant_id) REFERENCES applicant_principals(id)"
+		},
+		{
+			"name": "vouchers_one_owner",
+			"type": "c",
+			"table": "vouchers",
+			"validated": true,
+			"definition": "CHECK (((user_id IS NOT NULL) <> (applicant_id IS NOT NULL)))"
+		},
+		{
+			"name": "applicants_applicant_id_fkey",
+			"type": "f",
+			"table": "applicants",
+			"validated": true,
+			"definition": "FOREIGN KEY (applicant_id) REFERENCES applicant_principals(id)"
+		},
+		{
+			"name": "applicants_one_owner",
+			"type": "c",
+			"table": "applicants",
+			"validated": true,
+			"definition": "CHECK (((user_id IS NOT NULL) <> (applicant_id IS NOT NULL)))"
+		},
+		{
+			"name": "applications_applicant_id_fkey",
+			"type": "f",
+			"table": "applications",
+			"validated": true,
+			"definition": "FOREIGN KEY (applicant_id) REFERENCES applicant_principals(id)"
+		},
+		{
+			"name": "applications_one_owner",
+			"type": "c",
+			"table": "applications",
+			"validated": true,
+			"definition": "CHECK (((user_id IS NOT NULL) <> (applicant_id IS NOT NULL)))"
+		},
+		{
+			"name": "application_documents_applicant_id_fkey",
+			"type": "f",
+			"table": "application_documents",
+			"validated": true,
+			"definition": "FOREIGN KEY (applicant_id) REFERENCES applicant_principals(id)"
+		},
+		{
+			"name": "application_documents_one_owner",
+			"type": "c",
+			"table": "application_documents",
+			"validated": true,
+			"definition": "CHECK (((user_id IS NOT NULL) <> (applicant_id IS NOT NULL)))"
+		},
+		{
+			"name": "notifications_applicant_id_fkey",
+			"type": "f",
+			"table": "notifications",
+			"validated": true,
+			"definition": "FOREIGN KEY (applicant_id) REFERENCES applicant_principals(id)"
+		},
+		{
+			"name": "notifications_one_owner",
+			"type": "c",
+			"table": "notifications",
+			"validated": true,
+			"definition": "CHECK (((user_id IS NOT NULL) <> (applicant_id IS NOT NULL)))"
+		},
+		{
+			"name": "quote_checkout_owner",
+			"type": "f",
+			"table": "payment_quotes",
+			"validated": true,
+			"definition": "FOREIGN KEY (guest_checkout_id, applicant_id) REFERENCES guest_checkouts(id, applicant_id)"
+		},
+		{
+			"name": "quote_checkout_requires_principal",
+			"type": "c",
+			"table": "payment_quotes",
+			"validated": true,
+			"definition": "CHECK (((guest_checkout_id IS NULL) OR (applicant_id IS NOT NULL)))"
+		},
+		{
+			"name": "payment_checkout_owner",
+			"type": "f",
+			"table": "payments",
+			"validated": true,
+			"definition": "FOREIGN KEY (guest_checkout_id, applicant_id) REFERENCES guest_checkouts(id, applicant_id)"
+		},
+		{
+			"name": "voucher_contact_challenges_token_hash_key",
+			"type": "u",
+			"table": "voucher_contact_challenges",
+			"validated": true,
+			"definition": "UNIQUE (token_hash)"
+		},
+		{
+			"name": "voucher_contact_challenges_voucher_access_id_fkey",
+			"type": "f",
+			"table": "voucher_contact_challenges",
+			"validated": true,
+			"definition": "FOREIGN KEY (voucher_access_id) REFERENCES voucher_access(id)"
+		},
+		{
+			"name": "payment_checkout_requires_principal",
+			"type": "c",
+			"table": "payments",
+			"validated": true,
+			"definition": "CHECK (((guest_checkout_id IS NULL) OR (applicant_id IS NOT NULL)))"
+		},
+		{
+			"name": "voucher_access_credential_state_check",
+			"type": "c",
+			"table": "voucher_access",
+			"validated": true,
+			"definition": "CHECK ((credential_state = ANY (ARRAY['legacy'::text, 'pending_delivery'::text, 'current'::text])))"
+		},
+		{
+			"name": "voucher_access_credential_version_check",
+			"type": "c",
+			"table": "voucher_access",
+			"validated": true,
+			"definition": "CHECK ((credential_version >= 0))"
+		},
+		{
+			"name": "voucher_access_check",
+			"type": "c",
+			"table": "voucher_access",
+			"validated": true,
+			"definition": "CHECK ((((credential_state = 'legacy'::text) AND (legacy_user_id IS NOT NULL) AND (pin_hash IS NULL) AND (credential_version = 0) AND (credential_rotated_at IS NULL)) OR ((credential_state = 'pending_delivery'::text) AND (legacy_user_id IS NULL) AND (pin_hash IS NULL) AND (credential_version = 0) AND (credential_rotated_at IS NULL)) OR ((credential_state = 'current'::text) AND (pin_hash IS NOT NULL) AND (pin_hash ~ '^s[12]:[a-f0-9]{32}:[a-f0-9]{64}$'::text) AND (credential_version > 0) AND (credential_rotated_at IS NOT NULL))))"
+		},
+		{
+			"name": "voucher_access_pkey",
+			"type": "p",
+			"table": "voucher_access",
+			"validated": true,
+			"definition": "PRIMARY KEY (id)"
+		},
+		{
+			"name": "voucher_access_voucher_id_key",
+			"type": "u",
+			"table": "voucher_access",
+			"validated": true,
+			"definition": "UNIQUE (voucher_id)"
+		},
+		{
+			"name": "voucher_access_applicant_id_key",
+			"type": "u",
+			"table": "voucher_access",
+			"validated": true,
+			"definition": "UNIQUE (applicant_id)"
+		},
+		{
+			"name": "voucher_access_voucher_id_fkey",
+			"type": "f",
+			"table": "voucher_access",
+			"validated": true,
+			"definition": "FOREIGN KEY (voucher_id) REFERENCES vouchers(id)"
+		},
+		{
+			"name": "voucher_access_applicant_id_fkey",
+			"type": "f",
+			"table": "voucher_access",
+			"validated": true,
+			"definition": "FOREIGN KEY (applicant_id) REFERENCES applicant_principals(id)"
+		},
+		{
+			"name": "voucher_access_legacy_user_id_fkey",
+			"type": "f",
+			"table": "voucher_access",
+			"validated": true,
+			"definition": "FOREIGN KEY (legacy_user_id) REFERENCES profiles(id)"
+		},
+		{
+			"name": "applicant_sessions_token_hash_check",
+			"type": "c",
+			"table": "applicant_sessions",
+			"validated": true,
+			"definition": "CHECK ((token_hash ~ '^[a-f0-9]{64}$'::text))"
+		},
+		{
+			"name": "applicant_sessions_credential_version_check",
+			"type": "c",
+			"table": "applicant_sessions",
+			"validated": true,
+			"definition": "CHECK ((credential_version >= 0))"
+		},
+		{
+			"name": "applicant_sessions_check",
+			"type": "c",
+			"table": "applicant_sessions",
+			"validated": true,
+			"definition": "CHECK ((absolute_expires_at = (created_at + '720:00:00'::interval)))"
+		},
+		{
+			"name": "applicant_sessions_check1",
+			"type": "c",
+			"table": "applicant_sessions",
+			"validated": true,
+			"definition": "CHECK (((last_seen_at >= created_at) AND (last_seen_at < absolute_expires_at)))"
+		},
+		{
+			"name": "voucher_contact_challenges_contact_id_voucher_access_id_fkey",
+			"type": "f",
+			"table": "voucher_contact_challenges",
+			"validated": true,
+			"definition": "FOREIGN KEY (contact_id, voucher_access_id) REFERENCES voucher_contacts(id, voucher_access_id)"
+		},
+		{
+			"name": "applicant_sessions_check2",
+			"type": "c",
+			"table": "applicant_sessions",
+			"validated": true,
+			"definition": "CHECK ((idle_expires_at = LEAST((last_seen_at + '168:00:00'::interval), absolute_expires_at)))"
+		},
+		{
+			"name": "applicant_sessions_pkey",
+			"type": "p",
+			"table": "applicant_sessions",
+			"validated": true,
+			"definition": "PRIMARY KEY (id)"
+		},
+		{
+			"name": "applicant_sessions_token_hash_key",
+			"type": "u",
+			"table": "applicant_sessions",
+			"validated": true,
+			"definition": "UNIQUE (token_hash)"
+		},
+		{
+			"name": "applicant_sessions_voucher_access_id_fkey",
+			"type": "f",
+			"table": "applicant_sessions",
+			"validated": true,
+			"definition": "FOREIGN KEY (voucher_access_id) REFERENCES voucher_access(id)"
+		},
+		{
+			"name": "voucher_contacts_email_check",
+			"type": "c",
+			"table": "voucher_contacts",
+			"validated": true,
+			"definition": "CHECK (((length(btrim(email)) >= 3) AND (length(btrim(email)) <= 254)))"
+		},
+		{
+			"name": "voucher_contacts_contact_version_check",
+			"type": "c",
+			"table": "voucher_contacts",
+			"validated": true,
+			"definition": "CHECK ((contact_version > 0))"
+		},
+		{
+			"name": "voucher_contacts_pkey",
+			"type": "p",
+			"table": "voucher_contacts",
+			"validated": true,
+			"definition": "PRIMARY KEY (id)"
+		},
+		{
+			"name": "voucher_contacts_voucher_access_id_key",
+			"type": "u",
+			"table": "voucher_contacts",
+			"validated": true,
+			"definition": "UNIQUE (voucher_access_id)"
+		},
+		{
+			"name": "voucher_contacts_id_voucher_access_id_key",
+			"type": "u",
+			"table": "voucher_contacts",
+			"validated": true,
+			"definition": "UNIQUE (id, voucher_access_id)"
+		},
+		{
+			"name": "voucher_contacts_voucher_access_id_fkey",
+			"type": "f",
+			"table": "voucher_contacts",
+			"validated": true,
+			"definition": "FOREIGN KEY (voucher_access_id) REFERENCES voucher_access(id)"
+		},
+		{
+			"name": "voucher_contact_challenges_contact_version_check",
+			"type": "c",
+			"table": "voucher_contact_challenges",
+			"validated": true,
+			"definition": "CHECK ((contact_version > 0))"
+		},
+		{
+			"name": "voucher_contact_challenges_purpose_check",
+			"type": "c",
+			"table": "voucher_contact_challenges",
+			"validated": true,
+			"definition": "CHECK ((purpose = ANY (ARRAY['verify_contact'::text, 'reset_pin'::text])))"
+		},
+		{
+			"name": "voucher_contact_challenges_token_hash_check",
+			"type": "c",
+			"table": "voucher_contact_challenges",
+			"validated": true,
+			"definition": "CHECK ((token_hash ~ '^[a-f0-9]{64}$'::text))"
+		},
+		{
+			"name": "voucher_contact_challenges_failed_attempts_check",
+			"type": "c",
+			"table": "voucher_contact_challenges",
+			"validated": true,
+			"definition": "CHECK ((failed_attempts >= 0))"
+		},
+		{
+			"name": "voucher_contact_challenges_check",
+			"type": "c",
+			"table": "voucher_contact_challenges",
+			"validated": true,
+			"definition": "CHECK ((expires_at > created_at))"
+		},
+		{
+			"name": "voucher_contact_challenges_pkey",
+			"type": "p",
+			"table": "voucher_contact_challenges",
+			"validated": true,
+			"definition": "PRIMARY KEY (id)"
+		},
+		{
+			"name": "voucher_credential_deliveries_capability_hash_check",
+			"type": "c",
+			"table": "voucher_credential_deliveries",
+			"validated": true,
+			"definition": "CHECK ((capability_hash ~ '^[a-f0-9]{64}$'::text))"
+		},
+		{
+			"name": "voucher_credential_deliveries_check",
+			"type": "c",
+			"table": "voucher_credential_deliveries",
+			"validated": true,
+			"definition": "CHECK ((expires_at > created_at))"
+		},
+		{
+			"name": "voucher_credential_deliveries_pkey",
+			"type": "p",
+			"table": "voucher_credential_deliveries",
+			"validated": true,
+			"definition": "PRIMARY KEY (id)"
+		},
+		{
+			"name": "voucher_credential_deliveries_voucher_access_id_key",
+			"type": "u",
+			"table": "voucher_credential_deliveries",
+			"validated": true,
+			"definition": "UNIQUE (voucher_access_id)"
+		},
+		{
+			"name": "voucher_credential_deliveries_guest_checkout_id_key",
+			"type": "u",
+			"table": "voucher_credential_deliveries",
+			"validated": true,
+			"definition": "UNIQUE (guest_checkout_id)"
+		},
+		{
+			"name": "voucher_credential_deliveries_capability_hash_key",
+			"type": "u",
+			"table": "voucher_credential_deliveries",
+			"validated": true,
+			"definition": "UNIQUE (capability_hash)"
+		},
+		{
+			"name": "voucher_credential_deliveries_voucher_access_id_fkey",
+			"type": "f",
+			"table": "voucher_credential_deliveries",
+			"validated": true,
+			"definition": "FOREIGN KEY (voucher_access_id) REFERENCES voucher_access(id)"
+		},
+		{
+			"name": "voucher_credential_deliveries_guest_checkout_id_fkey",
+			"type": "f",
+			"table": "voucher_credential_deliveries",
+			"validated": true,
+			"definition": "FOREIGN KEY (guest_checkout_id) REFERENCES guest_checkouts(id)"
+		},
+		{
+			"name": "applicant_notification_links_check",
+			"type": "c",
+			"table": "applicant_notification_links",
+			"validated": true,
+			"definition": "CHECK (((application_id IS NOT NULL) <> (payment_id IS NOT NULL)))"
+		},
+		{
+			"name": "applicant_notification_links_pkey",
+			"type": "p",
+			"table": "applicant_notification_links",
+			"validated": true,
+			"definition": "PRIMARY KEY (notification_id)"
+		},
+		{
+			"name": "applicant_notification_links_notification_id_fkey",
+			"type": "f",
+			"table": "applicant_notification_links",
+			"validated": true,
+			"definition": "FOREIGN KEY (notification_id) REFERENCES notifications(id)"
+		},
+		{
+			"name": "applicant_notification_links_voucher_access_id_fkey",
+			"type": "f",
+			"table": "applicant_notification_links",
+			"validated": true,
+			"definition": "FOREIGN KEY (voucher_access_id) REFERENCES voucher_access(id)"
+		},
+		{
+			"name": "applicant_notification_links_application_id_fkey",
+			"type": "f",
+			"table": "applicant_notification_links",
+			"validated": true,
+			"definition": "FOREIGN KEY (application_id) REFERENCES applications(id)"
+		},
+		{
+			"name": "applicant_notification_links_payment_id_fkey",
+			"type": "f",
+			"table": "applicant_notification_links",
+			"validated": true,
+			"definition": "FOREIGN KEY (payment_id) REFERENCES payments(id)"
+		},
+		{
+			"name": "application_status_history_actor_applicant_id_fkey",
+			"type": "f",
+			"table": "application_status_history",
+			"validated": true,
+			"definition": "FOREIGN KEY (actor_applicant_id) REFERENCES applicant_principals(id)"
+		},
+		{
+			"name": "history_one_actor",
+			"type": "c",
+			"table": "application_status_history",
+			"validated": true,
+			"definition": "CHECK (((actor_id IS NULL) OR (actor_applicant_id IS NULL)))"
+		},
+		{
+			"name": "audit_logs_actor_applicant_id_fkey",
+			"type": "f",
+			"table": "audit_logs",
+			"validated": true,
+			"definition": "FOREIGN KEY (actor_applicant_id) REFERENCES applicant_principals(id)"
+		},
+		{
+			"name": "audit_one_actor",
+			"type": "c",
+			"table": "audit_logs",
+			"validated": true,
+			"definition": "CHECK (((actor_id IS NULL) OR (actor_applicant_id IS NULL)))"
+		}
+	],
+	"private_tables": [
+		{
+			"rls": true,
+			"name": "applicant_principals",
+			"privileges": [
+				{
+					"role": "anon",
+					"allowed": false,
+					"privilege": "SELECT"
+				},
+				{
+					"role": "authenticated",
+					"allowed": false,
+					"privilege": "SELECT"
+				},
+				{
+					"role": "service_role",
+					"allowed": true,
+					"privilege": "SELECT"
+				},
+				{
+					"role": "anon",
+					"allowed": false,
+					"privilege": "INSERT"
+				},
+				{
+					"role": "authenticated",
+					"allowed": false,
+					"privilege": "INSERT"
+				},
+				{
+					"role": "service_role",
+					"allowed": true,
+					"privilege": "INSERT"
+				},
+				{
+					"role": "anon",
+					"allowed": false,
+					"privilege": "UPDATE"
+				},
+				{
+					"role": "authenticated",
+					"allowed": false,
+					"privilege": "UPDATE"
+				},
+				{
+					"role": "service_role",
+					"allowed": true,
+					"privilege": "UPDATE"
+				},
+				{
+					"role": "anon",
+					"allowed": false,
+					"privilege": "DELETE"
+				},
+				{
+					"role": "authenticated",
+					"allowed": false,
+					"privilege": "DELETE"
+				},
+				{
+					"role": "service_role",
+					"allowed": true,
+					"privilege": "DELETE"
+				},
+				{
+					"role": "anon",
+					"allowed": false,
+					"privilege": "TRUNCATE"
+				},
+				{
+					"role": "authenticated",
+					"allowed": false,
+					"privilege": "TRUNCATE"
+				},
+				{
+					"role": "service_role",
+					"allowed": false,
+					"privilege": "TRUNCATE"
+				},
+				{
+					"role": "anon",
+					"allowed": false,
+					"privilege": "REFERENCES"
+				},
+				{
+					"role": "authenticated",
+					"allowed": false,
+					"privilege": "REFERENCES"
+				},
+				{
+					"role": "service_role",
+					"allowed": false,
+					"privilege": "REFERENCES"
+				},
+				{
+					"role": "anon",
+					"allowed": false,
+					"privilege": "TRIGGER"
+				},
+				{
+					"role": "authenticated",
+					"allowed": false,
+					"privilege": "TRIGGER"
+				},
+				{
+					"role": "service_role",
+					"allowed": false,
+					"privilege": "TRIGGER"
+				}
+			],
+			"public_acl": []
+		},
+		{
+			"rls": true,
+			"name": "guest_checkouts",
+			"privileges": [
+				{
+					"role": "anon",
+					"allowed": false,
+					"privilege": "SELECT"
+				},
+				{
+					"role": "authenticated",
+					"allowed": false,
+					"privilege": "SELECT"
+				},
+				{
+					"role": "service_role",
+					"allowed": true,
+					"privilege": "SELECT"
+				},
+				{
+					"role": "anon",
+					"allowed": false,
+					"privilege": "INSERT"
+				},
+				{
+					"role": "authenticated",
+					"allowed": false,
+					"privilege": "INSERT"
+				},
+				{
+					"role": "service_role",
+					"allowed": true,
+					"privilege": "INSERT"
+				},
+				{
+					"role": "anon",
+					"allowed": false,
+					"privilege": "UPDATE"
+				},
+				{
+					"role": "authenticated",
+					"allowed": false,
+					"privilege": "UPDATE"
+				},
+				{
+					"role": "service_role",
+					"allowed": true,
+					"privilege": "UPDATE"
+				},
+				{
+					"role": "anon",
+					"allowed": false,
+					"privilege": "DELETE"
+				},
+				{
+					"role": "authenticated",
+					"allowed": false,
+					"privilege": "DELETE"
+				},
+				{
+					"role": "service_role",
+					"allowed": true,
+					"privilege": "DELETE"
+				},
+				{
+					"role": "anon",
+					"allowed": false,
+					"privilege": "TRUNCATE"
+				},
+				{
+					"role": "authenticated",
+					"allowed": false,
+					"privilege": "TRUNCATE"
+				},
+				{
+					"role": "service_role",
+					"allowed": false,
+					"privilege": "TRUNCATE"
+				},
+				{
+					"role": "anon",
+					"allowed": false,
+					"privilege": "REFERENCES"
+				},
+				{
+					"role": "authenticated",
+					"allowed": false,
+					"privilege": "REFERENCES"
+				},
+				{
+					"role": "service_role",
+					"allowed": false,
+					"privilege": "REFERENCES"
+				},
+				{
+					"role": "anon",
+					"allowed": false,
+					"privilege": "TRIGGER"
+				},
+				{
+					"role": "authenticated",
+					"allowed": false,
+					"privilege": "TRIGGER"
+				},
+				{
+					"role": "service_role",
+					"allowed": false,
+					"privilege": "TRIGGER"
+				}
+			],
+			"public_acl": []
+		},
+		{
+			"rls": true,
+			"name": "voucher_access",
+			"privileges": [
+				{
+					"role": "anon",
+					"allowed": false,
+					"privilege": "SELECT"
+				},
+				{
+					"role": "authenticated",
+					"allowed": false,
+					"privilege": "SELECT"
+				},
+				{
+					"role": "service_role",
+					"allowed": true,
+					"privilege": "SELECT"
+				},
+				{
+					"role": "anon",
+					"allowed": false,
+					"privilege": "INSERT"
+				},
+				{
+					"role": "authenticated",
+					"allowed": false,
+					"privilege": "INSERT"
+				},
+				{
+					"role": "service_role",
+					"allowed": true,
+					"privilege": "INSERT"
+				},
+				{
+					"role": "anon",
+					"allowed": false,
+					"privilege": "UPDATE"
+				},
+				{
+					"role": "authenticated",
+					"allowed": false,
+					"privilege": "UPDATE"
+				},
+				{
+					"role": "service_role",
+					"allowed": true,
+					"privilege": "UPDATE"
+				},
+				{
+					"role": "anon",
+					"allowed": false,
+					"privilege": "DELETE"
+				},
+				{
+					"role": "authenticated",
+					"allowed": false,
+					"privilege": "DELETE"
+				},
+				{
+					"role": "service_role",
+					"allowed": true,
+					"privilege": "DELETE"
+				},
+				{
+					"role": "anon",
+					"allowed": false,
+					"privilege": "TRUNCATE"
+				},
+				{
+					"role": "authenticated",
+					"allowed": false,
+					"privilege": "TRUNCATE"
+				},
+				{
+					"role": "service_role",
+					"allowed": false,
+					"privilege": "TRUNCATE"
+				},
+				{
+					"role": "anon",
+					"allowed": false,
+					"privilege": "REFERENCES"
+				},
+				{
+					"role": "authenticated",
+					"allowed": false,
+					"privilege": "REFERENCES"
+				},
+				{
+					"role": "service_role",
+					"allowed": false,
+					"privilege": "REFERENCES"
+				},
+				{
+					"role": "anon",
+					"allowed": false,
+					"privilege": "TRIGGER"
+				},
+				{
+					"role": "authenticated",
+					"allowed": false,
+					"privilege": "TRIGGER"
+				},
+				{
+					"role": "service_role",
+					"allowed": false,
+					"privilege": "TRIGGER"
+				}
+			],
+			"public_acl": []
+		},
+		{
+			"rls": true,
+			"name": "applicant_sessions",
+			"privileges": [
+				{
+					"role": "anon",
+					"allowed": false,
+					"privilege": "SELECT"
+				},
+				{
+					"role": "authenticated",
+					"allowed": false,
+					"privilege": "SELECT"
+				},
+				{
+					"role": "service_role",
+					"allowed": true,
+					"privilege": "SELECT"
+				},
+				{
+					"role": "anon",
+					"allowed": false,
+					"privilege": "INSERT"
+				},
+				{
+					"role": "authenticated",
+					"allowed": false,
+					"privilege": "INSERT"
+				},
+				{
+					"role": "service_role",
+					"allowed": true,
+					"privilege": "INSERT"
+				},
+				{
+					"role": "anon",
+					"allowed": false,
+					"privilege": "UPDATE"
+				},
+				{
+					"role": "authenticated",
+					"allowed": false,
+					"privilege": "UPDATE"
+				},
+				{
+					"role": "service_role",
+					"allowed": true,
+					"privilege": "UPDATE"
+				},
+				{
+					"role": "anon",
+					"allowed": false,
+					"privilege": "DELETE"
+				},
+				{
+					"role": "authenticated",
+					"allowed": false,
+					"privilege": "DELETE"
+				},
+				{
+					"role": "service_role",
+					"allowed": true,
+					"privilege": "DELETE"
+				},
+				{
+					"role": "anon",
+					"allowed": false,
+					"privilege": "TRUNCATE"
+				},
+				{
+					"role": "authenticated",
+					"allowed": false,
+					"privilege": "TRUNCATE"
+				},
+				{
+					"role": "service_role",
+					"allowed": false,
+					"privilege": "TRUNCATE"
+				},
+				{
+					"role": "anon",
+					"allowed": false,
+					"privilege": "REFERENCES"
+				},
+				{
+					"role": "authenticated",
+					"allowed": false,
+					"privilege": "REFERENCES"
+				},
+				{
+					"role": "service_role",
+					"allowed": false,
+					"privilege": "REFERENCES"
+				},
+				{
+					"role": "anon",
+					"allowed": false,
+					"privilege": "TRIGGER"
+				},
+				{
+					"role": "authenticated",
+					"allowed": false,
+					"privilege": "TRIGGER"
+				},
+				{
+					"role": "service_role",
+					"allowed": false,
+					"privilege": "TRIGGER"
+				}
+			],
+			"public_acl": []
+		},
+		{
+			"rls": true,
+			"name": "voucher_contacts",
+			"privileges": [
+				{
+					"role": "anon",
+					"allowed": false,
+					"privilege": "SELECT"
+				},
+				{
+					"role": "authenticated",
+					"allowed": false,
+					"privilege": "SELECT"
+				},
+				{
+					"role": "service_role",
+					"allowed": true,
+					"privilege": "SELECT"
+				},
+				{
+					"role": "anon",
+					"allowed": false,
+					"privilege": "INSERT"
+				},
+				{
+					"role": "authenticated",
+					"allowed": false,
+					"privilege": "INSERT"
+				},
+				{
+					"role": "service_role",
+					"allowed": true,
+					"privilege": "INSERT"
+				},
+				{
+					"role": "anon",
+					"allowed": false,
+					"privilege": "UPDATE"
+				},
+				{
+					"role": "authenticated",
+					"allowed": false,
+					"privilege": "UPDATE"
+				},
+				{
+					"role": "service_role",
+					"allowed": true,
+					"privilege": "UPDATE"
+				},
+				{
+					"role": "anon",
+					"allowed": false,
+					"privilege": "DELETE"
+				},
+				{
+					"role": "authenticated",
+					"allowed": false,
+					"privilege": "DELETE"
+				},
+				{
+					"role": "service_role",
+					"allowed": true,
+					"privilege": "DELETE"
+				},
+				{
+					"role": "anon",
+					"allowed": false,
+					"privilege": "TRUNCATE"
+				},
+				{
+					"role": "authenticated",
+					"allowed": false,
+					"privilege": "TRUNCATE"
+				},
+				{
+					"role": "service_role",
+					"allowed": false,
+					"privilege": "TRUNCATE"
+				},
+				{
+					"role": "anon",
+					"allowed": false,
+					"privilege": "REFERENCES"
+				},
+				{
+					"role": "authenticated",
+					"allowed": false,
+					"privilege": "REFERENCES"
+				},
+				{
+					"role": "service_role",
+					"allowed": false,
+					"privilege": "REFERENCES"
+				},
+				{
+					"role": "anon",
+					"allowed": false,
+					"privilege": "TRIGGER"
+				},
+				{
+					"role": "authenticated",
+					"allowed": false,
+					"privilege": "TRIGGER"
+				},
+				{
+					"role": "service_role",
+					"allowed": false,
+					"privilege": "TRIGGER"
+				}
+			],
+			"public_acl": []
+		},
+		{
+			"rls": true,
+			"name": "voucher_contact_challenges",
+			"privileges": [
+				{
+					"role": "anon",
+					"allowed": false,
+					"privilege": "SELECT"
+				},
+				{
+					"role": "authenticated",
+					"allowed": false,
+					"privilege": "SELECT"
+				},
+				{
+					"role": "service_role",
+					"allowed": true,
+					"privilege": "SELECT"
+				},
+				{
+					"role": "anon",
+					"allowed": false,
+					"privilege": "INSERT"
+				},
+				{
+					"role": "authenticated",
+					"allowed": false,
+					"privilege": "INSERT"
+				},
+				{
+					"role": "service_role",
+					"allowed": true,
+					"privilege": "INSERT"
+				},
+				{
+					"role": "anon",
+					"allowed": false,
+					"privilege": "UPDATE"
+				},
+				{
+					"role": "authenticated",
+					"allowed": false,
+					"privilege": "UPDATE"
+				},
+				{
+					"role": "service_role",
+					"allowed": true,
+					"privilege": "UPDATE"
+				},
+				{
+					"role": "anon",
+					"allowed": false,
+					"privilege": "DELETE"
+				},
+				{
+					"role": "authenticated",
+					"allowed": false,
+					"privilege": "DELETE"
+				},
+				{
+					"role": "service_role",
+					"allowed": true,
+					"privilege": "DELETE"
+				},
+				{
+					"role": "anon",
+					"allowed": false,
+					"privilege": "TRUNCATE"
+				},
+				{
+					"role": "authenticated",
+					"allowed": false,
+					"privilege": "TRUNCATE"
+				},
+				{
+					"role": "service_role",
+					"allowed": false,
+					"privilege": "TRUNCATE"
+				},
+				{
+					"role": "anon",
+					"allowed": false,
+					"privilege": "REFERENCES"
+				},
+				{
+					"role": "authenticated",
+					"allowed": false,
+					"privilege": "REFERENCES"
+				},
+				{
+					"role": "service_role",
+					"allowed": false,
+					"privilege": "REFERENCES"
+				},
+				{
+					"role": "anon",
+					"allowed": false,
+					"privilege": "TRIGGER"
+				},
+				{
+					"role": "authenticated",
+					"allowed": false,
+					"privilege": "TRIGGER"
+				},
+				{
+					"role": "service_role",
+					"allowed": false,
+					"privilege": "TRIGGER"
+				}
+			],
+			"public_acl": []
+		},
+		{
+			"rls": true,
+			"name": "voucher_credential_deliveries",
+			"privileges": [
+				{
+					"role": "anon",
+					"allowed": false,
+					"privilege": "SELECT"
+				},
+				{
+					"role": "authenticated",
+					"allowed": false,
+					"privilege": "SELECT"
+				},
+				{
+					"role": "service_role",
+					"allowed": true,
+					"privilege": "SELECT"
+				},
+				{
+					"role": "anon",
+					"allowed": false,
+					"privilege": "INSERT"
+				},
+				{
+					"role": "authenticated",
+					"allowed": false,
+					"privilege": "INSERT"
+				},
+				{
+					"role": "service_role",
+					"allowed": true,
+					"privilege": "INSERT"
+				},
+				{
+					"role": "anon",
+					"allowed": false,
+					"privilege": "UPDATE"
+				},
+				{
+					"role": "authenticated",
+					"allowed": false,
+					"privilege": "UPDATE"
+				},
+				{
+					"role": "service_role",
+					"allowed": true,
+					"privilege": "UPDATE"
+				},
+				{
+					"role": "anon",
+					"allowed": false,
+					"privilege": "DELETE"
+				},
+				{
+					"role": "authenticated",
+					"allowed": false,
+					"privilege": "DELETE"
+				},
+				{
+					"role": "service_role",
+					"allowed": true,
+					"privilege": "DELETE"
+				},
+				{
+					"role": "anon",
+					"allowed": false,
+					"privilege": "TRUNCATE"
+				},
+				{
+					"role": "authenticated",
+					"allowed": false,
+					"privilege": "TRUNCATE"
+				},
+				{
+					"role": "service_role",
+					"allowed": false,
+					"privilege": "TRUNCATE"
+				},
+				{
+					"role": "anon",
+					"allowed": false,
+					"privilege": "REFERENCES"
+				},
+				{
+					"role": "authenticated",
+					"allowed": false,
+					"privilege": "REFERENCES"
+				},
+				{
+					"role": "service_role",
+					"allowed": false,
+					"privilege": "REFERENCES"
+				},
+				{
+					"role": "anon",
+					"allowed": false,
+					"privilege": "TRIGGER"
+				},
+				{
+					"role": "authenticated",
+					"allowed": false,
+					"privilege": "TRIGGER"
+				},
+				{
+					"role": "service_role",
+					"allowed": false,
+					"privilege": "TRIGGER"
+				}
+			],
+			"public_acl": []
+		},
+		{
+			"rls": true,
+			"name": "applicant_notification_links",
+			"privileges": [
+				{
+					"role": "anon",
+					"allowed": false,
+					"privilege": "SELECT"
+				},
+				{
+					"role": "authenticated",
+					"allowed": false,
+					"privilege": "SELECT"
+				},
+				{
+					"role": "service_role",
+					"allowed": true,
+					"privilege": "SELECT"
+				},
+				{
+					"role": "anon",
+					"allowed": false,
+					"privilege": "INSERT"
+				},
+				{
+					"role": "authenticated",
+					"allowed": false,
+					"privilege": "INSERT"
+				},
+				{
+					"role": "service_role",
+					"allowed": true,
+					"privilege": "INSERT"
+				},
+				{
+					"role": "anon",
+					"allowed": false,
+					"privilege": "UPDATE"
+				},
+				{
+					"role": "authenticated",
+					"allowed": false,
+					"privilege": "UPDATE"
+				},
+				{
+					"role": "service_role",
+					"allowed": true,
+					"privilege": "UPDATE"
+				},
+				{
+					"role": "anon",
+					"allowed": false,
+					"privilege": "DELETE"
+				},
+				{
+					"role": "authenticated",
+					"allowed": false,
+					"privilege": "DELETE"
+				},
+				{
+					"role": "service_role",
+					"allowed": true,
+					"privilege": "DELETE"
+				},
+				{
+					"role": "anon",
+					"allowed": false,
+					"privilege": "TRUNCATE"
+				},
+				{
+					"role": "authenticated",
+					"allowed": false,
+					"privilege": "TRUNCATE"
+				},
+				{
+					"role": "service_role",
+					"allowed": false,
+					"privilege": "TRUNCATE"
+				},
+				{
+					"role": "anon",
+					"allowed": false,
+					"privilege": "REFERENCES"
+				},
+				{
+					"role": "authenticated",
+					"allowed": false,
+					"privilege": "REFERENCES"
+				},
+				{
+					"role": "service_role",
+					"allowed": false,
+					"privilege": "REFERENCES"
+				},
+				{
+					"role": "anon",
+					"allowed": false,
+					"privilege": "TRIGGER"
+				},
+				{
+					"role": "authenticated",
+					"allowed": false,
+					"privilege": "TRIGGER"
+				},
+				{
+					"role": "service_role",
+					"allowed": false,
+					"privilege": "TRIGGER"
+				}
+			],
+			"public_acl": []
+		}
+	],
+	"new_table_counts": {
+		"voucher_access": 0,
+		"guest_checkouts": 0,
+		"voucher_contacts": 0,
+		"applicant_sessions": 0,
+		"applicant_principals": 0,
+		"voucher_contact_challenges": 0,
+		"applicant_notification_links": 0,
+		"voucher_credential_deliveries": 0
+	},
+	"existing_functions": [
+		{
+			"name": "consume_request_limit",
+			"definition": "CREATE OR REPLACE FUNCTION public.consume_request_limit(p_key text, p_limit integer, p_seconds integer)\n RETURNS boolean\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO ''\nAS $function$\r\ndeclare n integer;\r\nbegin\r\n  if length(p_key) not between 1 and 200 or p_limit not between 1 and 1000 or p_seconds not between 1 and 86400 then\r\n    raise exception 'Invalid limit parameters';\r\n  end if;\r\n  insert into public.request_limits as r(key, window_start, attempts)\r\n  values(p_key, clock_timestamp(), 1)\r\n  on conflict(key) do update set\r\n    attempts = case when r.window_start + make_interval(secs => p_seconds) <= clock_timestamp() then 1 else least(r.attempts + 1, p_limit + 1) end,\r\n    window_start = case when r.window_start + make_interval(secs => p_seconds) <= clock_timestamp() then clock_timestamp() else r.window_start end\r\n  returning attempts into n;\r\n  return n <= p_limit;\r\nend; $function$\n",
+			"anon_execute": false,
+			"service_execute": true,
+			"security_definer": true,
+			"authenticated_execute": false
+		},
+		{
+			"name": "fulfill_verified_payment",
+			"definition": "CREATE OR REPLACE FUNCTION public.fulfill_verified_payment(p_reference text, p_amount integer, p_currency text, p_email text, p_provider_id text, p_pin_hash text, p_pin_encrypted text)\n RETURNS uuid\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO ''\nAS $function$\r\ndeclare payment public.payments; voucher_id uuid;\r\nbegin\r\n  select * into payment from public.payments where reference = p_reference for update;\r\n  if not found then raise exception 'Payment not found'; end if;\r\n  if payment.provider <> 'paystack' or payment.amount is distinct from p_amount\r\n    or payment.currency is distinct from p_currency\r\n    or lower(payment.customer_email) is distinct from lower(p_email)\r\n    or coalesce(p_provider_id, '') = '' then raise exception 'Payment verification mismatch'; end if;\r\n  if payment.status = 'refunded' then raise exception 'Payment refunded'; end if;\r\n  select id into voucher_id from public.vouchers where payment_id = payment.id;\r\n  if found then\r\n    if payment.status <> 'successful' or payment.provider_id is distinct from p_provider_id then\r\n      raise exception 'Inconsistent payment state';\r\n    end if;\r\n    return voucher_id;\r\n  end if;\r\n  if coalesce(p_pin_hash, '') = '' or coalesce(p_pin_encrypted, '') = '' then raise exception 'Missing voucher credentials'; end if;\r\n  update public.payments set status = 'successful', provider_id = p_provider_id, paid_at = now() where id = payment.id;\r\n  insert into public.vouchers(user_id, payment_id, voucher_type_id, job_id, pin_hash, pin_encrypted, expires_at)\r\n  values(payment.user_id, payment.id, payment.voucher_type_id, payment.job_id, p_pin_hash, p_pin_encrypted,\r\n    now() + make_interval(days => payment.validity_days)) returning id into voucher_id;\r\n  insert into public.notifications(user_id, title, body, href)\r\n  values(payment.user_id, 'Voucher ready', 'Your payment was verified and your voucher is ready.', '/dashboard/vouchers');\r\n  return voucher_id;\r\nend; $function$\n",
+			"anon_execute": false,
+			"service_execute": true,
+			"security_definer": true,
+			"authenticated_execute": false
+		},
+		{
+			"name": "handle_new_user",
+			"definition": "CREATE OR REPLACE FUNCTION public.handle_new_user()\n RETURNS trigger\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO ''\nAS $function$\r\nbegin\r\n  insert into public.profiles(id, full_name) values (new.id, left(coalesce(new.raw_user_meta_data->>'full_name', ''), 200));\r\n  return new;\r\nend;\r\n$function$\n",
+			"anon_execute": true,
+			"service_execute": true,
+			"security_definer": true,
+			"authenticated_execute": true
+		},
+		{
+			"name": "audit_change",
+			"definition": "CREATE OR REPLACE FUNCTION public.audit_change()\n RETURNS trigger\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO ''\nAS $function$\r\nbegin\r\n  insert into public.audit_logs(actor_id, action, target_type, target_id)\r\n  values(auth.uid(), lower(tg_op), tg_table_name, coalesce(to_jsonb(new)->>'id', to_jsonb(new)->>'key', to_jsonb(old)->>'id', to_jsonb(old)->>'key'));\r\n  return coalesce(new, old);\r\nend; $function$\n",
+			"anon_execute": true,
+			"service_execute": true,
+			"security_definer": true,
+			"authenticated_execute": true
+		},
+		{
+			"name": "is_admin",
+			"definition": "CREATE OR REPLACE FUNCTION public.is_admin()\n RETURNS boolean\n LANGUAGE sql\n STABLE SECURITY DEFINER\n SET search_path TO ''\nAS $function$\r\n  select exists(select 1 from public.profiles where id = auth.uid() and role in ('admin', 'super_admin'));\r\n$function$\n",
+			"anon_execute": true,
+			"service_execute": true,
+			"security_definer": true,
+			"authenticated_execute": true
+		},
+		{
+			"name": "review_application",
+			"definition": "CREATE OR REPLACE FUNCTION public.review_application(p_request_id uuid, p_actor_id uuid, p_application_id uuid, p_revision integer, p_status application_status, p_message text)\n RETURNS jsonb\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO ''\nAS $function$\r\ndeclare\r\n  application public.applications;\r\n  previous public.application_review_commands;\r\n  staff_role public.app_role;\r\n  allowed boolean;\r\n  next_revision integer;\r\nbegin\r\n  if p_request_id is null or p_actor_id is null or p_application_id is null\r\n    or p_revision is null or p_revision < 0 or p_status is null\r\n    or p_message is null or length(btrim(p_message)) not between 10 and 2000 then\r\n    raise exception 'Invalid review parameters';\r\n  end if;\r\n  -- Lock the role so revocation cannot race an authorized decision.\r\n  select role into staff_role from public.profiles where id = p_actor_id for share;\r\n  if not found or staff_role not in ('admin','super_admin') then\r\n    raise exception 'Administrator required';\r\n  end if;\r\n  select * into application from public.applications where id = p_application_id for update;\r\n  if not found then raise exception 'Application not found'; end if;\r\n\r\n  select * into previous from public.application_review_commands where request_id = p_request_id;\r\n  if found then\r\n    if previous.application_id is distinct from p_application_id\r\n      or previous.actor_id is distinct from p_actor_id\r\n      or previous.expected_revision is distinct from p_revision\r\n      or previous.next_status is distinct from p_status\r\n      or previous.applicant_message is distinct from btrim(p_message) then\r\n      raise exception 'Review request conflict';\r\n    end if;\r\n    return jsonb_build_object('reference',application.reference,\r\n      'status',previous.next_status,'revision',previous.result_revision,'replayed',true);\r\n  end if;\r\n  if application.submitted_at is null or application.status = 'draft' then\r\n    raise exception 'Only submitted applications can be reviewed';\r\n  end if;\r\n  if application.revision <> p_revision then raise exception 'Revision conflict'; end if;\r\n\r\n  -- Internal screening only. Applicant-driven withdrawal requires a separate\r\n  -- protected operation; this RPC cannot withdraw or reopen terminal states.\r\n  allowed := case application.status\r\n    when 'submitted' then p_status in ('under_review')\r\n    when 'under_review' then p_status in ('additional_information_required','shortlisted','unsuccessful')\r\n    when 'additional_information_required' then p_status in ('under_review')\r\n    when 'shortlisted' then p_status in ('interview','final_review','unsuccessful')\r\n    when 'interview' then p_status in ('final_review','unsuccessful')\r\n    when 'final_review' then p_status in ('accepted','unsuccessful','additional_information_required')\r\n    else false\r\n  end;\r\n  if not allowed then raise exception 'Review transition not permitted'; end if;\r\n  next_revision := application.revision + 1;\r\n  -- Reserve the retry key in the same transaction. A cross-application key\r\n  -- collision rolls back the entire operation rather than creating duplicates.\r\n  insert into public.application_review_commands(\r\n    request_id,application_id,actor_id,expected_revision,next_status,applicant_message,result_revision\r\n  ) values(p_request_id,p_application_id,p_actor_id,p_revision,p_status,btrim(p_message),next_revision);\r\n  update public.applications set status = p_status,revision = next_revision,updated_at = clock_timestamp() where id = p_application_id;\r\n  insert into public.application_status_history(application_id,status,message,actor_id)\r\n    values(p_application_id,p_status,btrim(p_message),p_actor_id);\r\n  insert into public.notifications(user_id,title,body,href)\r\n    values(application.user_id,'Application update',\r\n      application.reference || ': ' || case when p_status = 'accepted'\r\n        then 'Accepted/qualified through CruiseApply internal screening. This is not hiring, employment or selection by a cruise company and does not guarantee employer referral.'\r\n        else replace(p_status::text,'_',' ') || '. Open your application to read the screening update.' end,\r\n      '/dashboard/applications/' || p_application_id::text);\r\n  insert into public.audit_logs(actor_id,action,target_type,target_id,metadata)\r\n    values(p_actor_id,'application_reviewed','applications',p_application_id::text,\r\n      jsonb_build_object('request_id',p_request_id,'from_status',application.status,\r\n        'to_status',p_status,'from_revision',p_revision,'to_revision',next_revision));\r\n  return jsonb_build_object('reference',application.reference,'status',p_status,\r\n    'revision',next_revision,'replayed',false);\r\nend; $function$\n",
+			"anon_execute": false,
+			"service_execute": true,
+			"security_definer": true,
+			"authenticated_execute": false
+		},
+		{
+			"name": "redeem_verified_voucher",
+			"definition": "CREATE OR REPLACE FUNCTION public.redeem_verified_voucher(p_user_id uuid, p_serial text, p_pin_hash text, p_job_id uuid)\n RETURNS uuid\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO ''\nAS $function$\r\ndeclare voucher public.vouchers; selected_job public.jobs; application_id uuid;\r\nbegin\r\n  select * into voucher from public.vouchers where serial = p_serial and user_id = p_user_id for update;\r\n  if not found or voucher.pin_hash is distinct from p_pin_hash then raise exception 'Invalid voucher'; end if;\r\n  if voucher.status <> 'unused' or voucher.expires_at <= now() then raise exception 'Voucher unavailable'; end if;\r\n  if voucher.job_id is not null and voucher.job_id <> p_job_id then raise exception 'Voucher is linked to another job'; end if;\r\n  select * into selected_job from public.jobs where id = p_job_id for share;\r\n  if not found or selected_job.status <> 'published' or selected_job.sample\r\n    or selected_job.application_deadline <= now() then raise exception 'Job unavailable'; end if;\r\n  insert into public.applications(user_id, job_id, voucher_id)\r\n  values(p_user_id, p_job_id, voucher.id) returning id into application_id;\r\n  update public.vouchers set status = 'used', activated_at = now(), job_id = p_job_id where id = voucher.id;\r\n  insert into public.application_status_history(application_id, status, message, actor_id)\r\n  values(application_id, 'draft', 'Application started with a verified voucher.', p_user_id);\r\n  insert into public.notifications(user_id, title, body, href)\r\n  values(p_user_id, 'Application started', 'Your application draft is ready to complete.', '/dashboard/applications');\r\n  return application_id;\r\nend; $function$\n",
+			"anon_execute": false,
+			"service_execute": true,
+			"security_definer": true,
+			"authenticated_execute": false
+		},
+		{
+			"name": "protect_payment_snapshot",
+			"definition": "CREATE OR REPLACE FUNCTION public.protect_payment_snapshot()\n RETURNS trigger\n LANGUAGE plpgsql\n SET search_path TO ''\nAS $function$\r\nbegin\r\n  if (to_jsonb(new) - array['status','provider_id','paid_at','checkout_url','charge_amount','charge_currency'])\r\n    is distinct from (to_jsonb(old) - array['status','provider_id','paid_at','checkout_url','charge_amount','charge_currency']) then\r\n    raise exception 'Payment pricing snapshots are immutable';\r\n  end if;\r\n  return new;\r\nend; $function$\n",
+			"anon_execute": false,
+			"service_execute": true,
+			"security_definer": false,
+			"authenticated_execute": false
+		},
+		{
+			"name": "protect_payment_quote",
+			"definition": "CREATE OR REPLACE FUNCTION public.protect_payment_quote()\n RETURNS trigger\n LANGUAGE plpgsql\n SET search_path TO ''\nAS $function$\r\nbegin raise exception 'Payment quotes are immutable; request a new quote'; end; $function$\n",
+			"anon_execute": false,
+			"service_execute": true,
+			"security_definer": false,
+			"authenticated_execute": false
+		},
+		{
+			"name": "quote_voucher_price",
+			"definition": "CREATE OR REPLACE FUNCTION public.quote_voucher_price(p_user_id uuid, p_type_id uuid, p_country_code text)\n RETURNS jsonb\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO ''\nAS $function$\r\ndeclare\r\n  product public.voucher_types; country public.pricing_countries; region public.pricing_regions;\r\n  fx public.pricing_exchange_rates; quote public.payment_quotes;\r\n  charge integer; estimate bigint; display_code text := 'GHS'; decimals smallint := 2;\r\n  source text := 'base'; override_amount integer; expires timestamptz := now() + interval '15 minutes';\r\nbegin\r\n  select * into product from public.voucher_types where id = p_type_id and active;\r\n  if not found or product.amount is null or product.currency <> 'GHS' then raise exception 'Voucher pricing unavailable'; end if;\r\n  select * into country from public.pricing_countries where code = p_country_code and active;\r\n  if not found then raise exception 'Country unavailable'; end if;\r\n  select * into region from public.pricing_regions where id = country.region_id and active;\r\n  charge := product.amount;\r\n  if region.id is not null then\r\n    select charge_amount into override_amount from public.voucher_price_overrides where voucher_type_id = product.id and region_id = region.id and active;\r\n    if found then charge := override_amount; source := 'region'; end if;\r\n  end if;\r\n  select charge_amount into override_amount from public.voucher_price_overrides where voucher_type_id = product.id and country_code = country.code and active;\r\n  if found then charge := override_amount; source := 'country'; end if;\r\n  estimate := charge;\r\n  if region.display_currency is not null and region.display_currency <> 'GHS' then\r\n    select * into fx from public.pricing_exchange_rates where quote_currency = region.display_currency and as_of <= now() and valid_until > now();\r\n    if found then\r\n      select minor_units into decimals from public.pricing_currencies where code = fx.quote_currency;\r\n      estimate := round(charge::numeric / 100 * fx.rate * power(10::numeric,decimals))::bigint;\r\n      if estimate > 0 and estimate <= 9007199254740991 then\r\n        display_code := fx.quote_currency; expires := least(expires,fx.valid_until);\r\n      else estimate := charge; decimals := 2; end if;\r\n    end if;\r\n  end if;\r\n  insert into public.payment_quotes(user_id,voucher_type_id,product_name,validity_days,country_code,region_code,price_source,\r\n    charge_amount,charge_currency,display_amount,display_currency,display_minor_units,exchange_rate,exchange_rate_source,exchange_rate_as_of,expires_at)\r\n  values(p_user_id,product.id,product.name,product.validity_days,country.code,region.code,source,\r\n    charge,'GHS',estimate,display_code,decimals,\r\n    case when display_code <> 'GHS' then fx.rate else null end,\r\n    case when display_code <> 'GHS' then fx.source else null end,\r\n    case when display_code <> 'GHS' then fx.as_of else null end,expires)\r\n  returning * into quote;\r\n  return to_jsonb(quote);\r\nend; $function$\n",
+			"anon_execute": false,
+			"service_execute": true,
+			"security_definer": true,
+			"authenticated_execute": false
+		},
+		{
+			"name": "create_payment_from_quote",
+			"definition": "CREATE OR REPLACE FUNCTION public.create_payment_from_quote(p_user_id uuid, p_quote_id uuid, p_reference text, p_job_id uuid DEFAULT NULL::uuid)\n RETURNS jsonb\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO ''\nAS $function$\r\ndeclare quote public.payment_quotes; payment public.payments; email text; job public.jobs;\r\nbegin\r\n  select * into quote from public.payment_quotes where id = p_quote_id and user_id = p_user_id for update;\r\n  if not found then raise exception 'Quote unavailable'; end if;\r\n  select * into payment from public.payments where quote_id = quote.id;\r\n  if found then\r\n    if payment.job_id is distinct from p_job_id then raise exception 'Quote already used for another selection'; end if;\r\n    if quote.expires_at <= now() and payment.checkout_url is null and payment.status in ('initialized','pending') then\r\n      raise exception 'Quote expired before checkout was initialized';\r\n    end if;\r\n    return to_jsonb(payment);\r\n  end if;\r\n  if quote.expires_at <= now() then raise exception 'Quote expired'; end if;\r\n  if not exists(select 1 from public.voucher_types where id = quote.voucher_type_id and active) then raise exception 'Voucher unavailable'; end if;\r\n  if p_job_id is not null then\r\n    select * into job from public.jobs where id = p_job_id for share;\r\n    if not found or job.status <> 'published' or job.sample or job.application_deadline <= now() then raise exception 'Job unavailable'; end if;\r\n  end if;\r\n  select u.email into email from auth.users u where u.id = p_user_id;\r\n  if email is null then raise exception 'Customer unavailable'; end if;\r\n  insert into public.payments(user_id,reference,voucher_type_id,job_id,amount,currency,validity_days,customer_email,\r\n    quote_id,product_name,country_code,region_code,price_source,display_amount,display_currency,display_minor_units,exchange_rate,exchange_rate_source,exchange_rate_as_of)\r\n  values(p_user_id,p_reference,quote.voucher_type_id,p_job_id,quote.charge_amount,quote.charge_currency,quote.validity_days,email,\r\n    quote.id,quote.product_name,quote.country_code,quote.region_code,quote.price_source,quote.display_amount,quote.display_currency,quote.display_minor_units,quote.exchange_rate,quote.exchange_rate_source,quote.exchange_rate_as_of)\r\n  returning * into payment;\r\n  return to_jsonb(payment);\r\nend; $function$\n",
+			"anon_execute": false,
+			"service_execute": true,
+			"security_definer": true,
+			"authenticated_execute": false
+		},
+		{
+			"name": "save_application_draft",
+			"definition": "CREATE OR REPLACE FUNCTION public.save_application_draft(p_user_id uuid, p_application_id uuid, p_revision integer, p_data jsonb)\n RETURNS jsonb\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO ''\nAS $function$\r\ndeclare a public.applications; item jsonb; ordinal integer;\r\nbegin\r\n  select * into a from public.applications where id = p_application_id and user_id = p_user_id for update;\r\n  if not found then raise exception 'Application unavailable'; end if;\r\n  if a.status <> 'draft' then raise exception 'Application is read only'; end if;\r\n  if p_revision is distinct from a.revision then raise exception 'Revision conflict'; end if;\r\n  if jsonb_typeof(p_data) is distinct from 'object'\r\n    or jsonb_typeof(p_data->'personal') is distinct from 'object'\r\n    or jsonb_typeof(p_data->'identification') is distinct from 'object'\r\n    or jsonb_typeof(p_data->'education') is distinct from 'array'\r\n    or jsonb_typeof(p_data->'experience') is distinct from 'array'\r\n    or jsonb_typeof(p_data->'answers') is distinct from 'object'\r\n    or octet_length(p_data::text) > 65536 then raise exception 'Invalid draft'; end if;\r\n  if jsonb_array_length(p_data->'education') > 20 or jsonb_array_length(p_data->'experience') > 30 then\r\n    raise exception 'Too many records'; end if;\r\n  update public.applications set personal = p_data->'personal', identification = p_data->'identification',\r\n    revision = revision + 1, updated_at = clock_timestamp() where id = a.id returning * into a;\r\n  delete from public.application_education where application_id = a.id;\r\n  ordinal := 0;\r\n  for item in select value from jsonb_array_elements(p_data->'education') loop\r\n    insert into public.application_education(application_id,institution,qualification,field,country,start_date,completion_date,sort_order)\r\n    values(a.id,item->>'institution',item->>'qualification',item->>'field',item->>'country',\r\n      nullif(item->>'start_date','')::date,nullif(item->>'completion_date','')::date,ordinal);\r\n    ordinal := ordinal + 1;\r\n  end loop;\r\n  delete from public.application_experience where application_id = a.id;\r\n  ordinal := 0;\r\n  for item in select value from jsonb_array_elements(p_data->'experience') loop\r\n    insert into public.application_experience(application_id,employer,position,location,start_date,end_date,responsibilities,sort_order)\r\n    values(a.id,item->>'employer',item->>'position',item->>'location',nullif(item->>'start_date','')::date,\r\n      nullif(item->>'end_date','')::date,item->>'responsibilities',ordinal);\r\n    ordinal := ordinal + 1;\r\n  end loop;\r\n  delete from public.application_answers where application_id = a.id;\r\n  insert into public.application_answers(application_id,question_id,answer)\r\n    select a.id,key,value from jsonb_each_text(p_data->'answers');\r\n  return jsonb_build_object('revision',a.revision,'updatedAt',a.updated_at);\r\nend; $function$\n",
+			"anon_execute": false,
+			"service_execute": true,
+			"security_definer": true,
+			"authenticated_execute": false
+		},
+		{
+			"name": "remove_application_document",
+			"definition": "CREATE OR REPLACE FUNCTION public.remove_application_document(p_user_id uuid, p_application_id uuid, p_revision integer, p_document_id uuid)\n RETURNS jsonb\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO ''\nAS $function$\r\ndeclare a public.applications; path text;\r\nbegin\r\n  select * into a from public.applications where id = p_application_id and user_id = p_user_id for update;\r\n  if not found then raise exception 'Application unavailable'; end if;\r\n  if a.status <> 'draft' then raise exception 'Application is read only'; end if;\r\n  if p_revision is distinct from a.revision then raise exception 'Revision conflict'; end if;\r\n  delete from public.application_documents where id = p_document_id and application_id = a.id and user_id = p_user_id\r\n    returning storage_path into path;\r\n  if not found then raise exception 'Document unavailable'; end if;\r\n  update public.applications set revision = revision + 1, updated_at = clock_timestamp() where id = a.id returning * into a;\r\n  return jsonb_build_object('revision',a.revision,'updatedAt',a.updated_at,'storagePath',path);\r\nend; $function$\n",
+			"anon_execute": false,
+			"service_execute": true,
+			"security_definer": true,
+			"authenticated_execute": false
+		},
+		{
+			"name": "add_application_note",
+			"definition": "CREATE OR REPLACE FUNCTION public.add_application_note(p_request_id uuid, p_actor_id uuid, p_application_id uuid, p_revision integer, p_body text)\n RETURNS uuid\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO ''\nAS $function$\r\ndeclare staff_role public.app_role; application public.applications; existing public.admin_notes;\r\nbegin\r\n  if p_request_id is null or p_actor_id is null or p_application_id is null\r\n    or p_revision is null or p_revision < 0 or p_body is null\r\n    or length(btrim(p_body)) not between 10 and 5000 then\r\n    raise exception 'Invalid note parameters';\r\n  end if;\r\n  select role into staff_role from public.profiles where id = p_actor_id for share;\r\n  if not found or staff_role not in ('admin','super_admin') then raise exception 'Administrator required'; end if;\r\n  select * into application from public.applications where id = p_application_id for update;\r\n  if not found then raise exception 'Application not found'; end if;\r\n  select * into existing from public.admin_notes where id = p_request_id;\r\n  if found then\r\n    if existing.application_id is distinct from p_application_id\r\n      or existing.actor_id is distinct from p_actor_id\r\n      or existing.context_revision is distinct from p_revision\r\n      or existing.body is distinct from btrim(p_body) then raise exception 'Note request conflict'; end if;\r\n    return existing.id;\r\n  end if;\r\n  if application.revision <> p_revision then raise exception 'Revision conflict'; end if;\r\n  insert into public.admin_notes(id,application_id,actor_id,body,context_revision)\r\n    values(p_request_id,p_application_id,p_actor_id,btrim(p_body),p_revision);\r\n  -- Preserve the foundation's generic insert audit; add a staff-attributed event.\r\n  -- No note body is duplicated into audit metadata.\r\n  insert into public.audit_logs(actor_id,action,target_type,target_id,metadata)\r\n    values(p_actor_id,'application_note_added','admin_notes',p_request_id::text,\r\n      jsonb_build_object('application_id',p_application_id,'context_revision',p_revision,'request_id',p_request_id));\r\n  return p_request_id;\r\nend; $function$\n",
+			"anon_execute": false,
+			"service_execute": true,
+			"security_definer": true,
+			"authenticated_execute": false
+		},
+		{
+			"name": "register_application_document",
+			"definition": "CREATE OR REPLACE FUNCTION public.register_application_document(p_user_id uuid, p_application_id uuid, p_revision integer, p_id uuid, p_kind text, p_name text, p_path text, p_mime text, p_size integer)\n RETURNS jsonb\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO ''\nAS $function$\r\ndeclare a public.applications;\r\nbegin\r\n  select * into a from public.applications where id = p_application_id and user_id = p_user_id for update;\r\n  if not found then raise exception 'Application unavailable'; end if;\r\n  if a.status <> 'draft' then raise exception 'Application is read only'; end if;\r\n  if p_revision is distinct from a.revision then raise exception 'Revision conflict'; end if;\r\n  if p_kind is null or p_kind not in ('cv','passport','certificate','photo','supporting')\r\n    or coalesce(length(p_name),0) not between 1 and 200\r\n    or p_path is distinct from (p_user_id::text || '/' || a.id::text || '/' || p_id::text)\r\n    then raise exception 'Invalid document'; end if;\r\n  if (select count(*) from public.application_documents where application_id = a.id) >= 20 then\r\n    raise exception 'Document limit reached'; end if;\r\n  if not exists(select 1 from storage.objects where bucket_id = 'application-documents' and name = p_path)\r\n    then raise exception 'Uploaded object missing'; end if;\r\n  insert into public.application_documents(id,application_id,user_id,kind,name,storage_path,mime_type,size_bytes)\r\n    values(p_id,a.id,p_user_id,p_kind,p_name,p_path,p_mime,p_size);\r\n  update public.applications set revision = revision + 1, updated_at = clock_timestamp() where id = a.id returning * into a;\r\n  return jsonb_build_object('revision',a.revision,'updatedAt',a.updated_at,'documentId',p_id);\r\nend; $function$\n",
+			"anon_execute": false,
+			"service_execute": true,
+			"security_definer": true,
+			"authenticated_execute": false
+		},
+		{
+			"name": "submit_application",
+			"definition": "CREATE OR REPLACE FUNCTION public.submit_application(p_user_id uuid, p_application_id uuid, p_revision integer, p_declaration boolean)\n RETURNS jsonb\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO ''\nAS $function$\r\ndeclare a public.applications; j public.jobs; q jsonb; k text; dob date;\r\nbegin\r\n  select * into a from public.applications where id = p_application_id and user_id = p_user_id for update;\r\n  if not found then raise exception 'Application unavailable'; end if;\r\n  if p_declaration is distinct from true then raise exception 'Declaration required'; end if;\r\n  if a.submitted_at is not null then\r\n    return jsonb_build_object('reference',a.reference,'submittedAt',a.submitted_at); end if;\r\n  if a.status <> 'draft' then raise exception 'Application is read only'; end if;\r\n  if p_revision is distinct from a.revision then raise exception 'Revision conflict'; end if;\r\n  select * into j from public.jobs where id = a.job_id for share;\r\n  if not found or j.status <> 'published' or j.sample or j.application_deadline <= now()\r\n    then raise exception 'Vacancy is no longer open'; end if;\r\n  if not exists(select 1 from public.vouchers v where v.id = a.voucher_id and v.user_id = p_user_id\r\n    and v.job_id = a.job_id and v.status = 'used') then raise exception 'Voucher unavailable'; end if;\r\n  foreach k in array array['first_name','surname','date_of_birth','nationality','country_of_residence','email','phone','address'] loop\r\n    if coalesce(length(btrim(a.personal->>k)),0) = 0 then raise exception 'Complete personal information'; end if;\r\n  end loop;\r\n  dob := (a.personal->>'date_of_birth')::date;\r\n  if dob >= current_date or (j.minimum_age is not null and dob > (current_date - make_interval(years => j.minimum_age))::date)\r\n    then raise exception 'Date of birth does not meet vacancy requirements'; end if;\r\n  if jsonb_typeof(j.questions) is distinct from 'array' then raise exception 'Invalid vacancy question configuration'; end if;\r\n  for q in select value from jsonb_array_elements(j.questions) loop\r\n    if coalesce((q->>'required')::boolean,false) and not exists(\r\n      select 1 from public.application_answers where application_id = a.id and question_id = q->>'id' and length(btrim(answer)) > 0)\r\n      then raise exception 'Answer required vacancy questions'; end if;\r\n  end loop;\r\n  foreach k in array j.required_documents loop\r\n    if not exists(select 1 from public.application_documents where application_id = a.id and kind = k)\r\n      then raise exception 'Upload required documents'; end if;\r\n  end loop;\r\n  update public.applications set status = 'submitted', declaration_at = now(), submitted_at = now(),\r\n    revision = revision + 1, updated_at = clock_timestamp() where id = a.id returning * into a;\r\n  insert into public.application_status_history(application_id,status,message,actor_id)\r\n    values(a.id,'submitted','Application submitted with applicant declaration.',p_user_id);\r\n  insert into public.notifications(user_id,title,body,href)\r\n    values(p_user_id,'Application submitted','Your application ' || a.reference || ' has been received.','/dashboard/applications/' || a.id::text);\r\n  insert into public.audit_logs(actor_id,action,target_type,target_id)\r\n    values(p_user_id,'application_submitted','applications',a.id::text);\r\n  return jsonb_build_object('reference',a.reference,'submittedAt',a.submitted_at);\r\nend; $function$\n",
+			"anon_execute": false,
+			"service_execute": true,
+			"security_definer": true,
+			"authenticated_execute": false
+		},
+		{
+			"name": "guard_managed_application",
+			"definition": "CREATE OR REPLACE FUNCTION public.guard_managed_application()\n RETURNS trigger\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO ''\nAS $function$\r\ndeclare opportunity public.jobs;\r\nbegin\r\n  if tg_op = 'INSERT' then\r\n    select * into opportunity from public.jobs where id = new.job_id for share;\r\n    if not found or opportunity.opportunity_type <> 'managed'\r\n      or opportunity.status <> 'published' or opportunity.sample\r\n      or opportunity.application_deadline <= now() then\r\n      raise exception 'Managed opportunity unavailable';\r\n    end if;\r\n    new.opportunity_title_snapshot := opportunity.title;\r\n    new.service_description_snapshot := opportunity.service_description;\r\n  else\r\n    if new.user_id is distinct from old.user_id or new.job_id is distinct from old.job_id\r\n      or new.voucher_id is distinct from old.voucher_id\r\n      or new.opportunity_title_snapshot is distinct from old.opportunity_title_snapshot\r\n      or new.service_description_snapshot is distinct from old.service_description_snapshot then\r\n      raise exception 'Application ownership, opportunity and service snapshots are immutable';\r\n    end if;\r\n  end if;\r\n  return new;\r\nend; $function$\n",
+			"anon_execute": false,
+			"service_execute": true,
+			"security_definer": true,
+			"authenticated_execute": false
+		}
+	]
+}

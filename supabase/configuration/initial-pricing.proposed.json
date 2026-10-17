@@ -1,0 +1,23 @@
+{
+  "status": "applied_by_owner_test_checkout_verified_webhook_pending",
+  "paystack_mode": "test_only",
+  "product": {
+    "code": "application-access",
+    "name": "CruiseApply Application Access",
+    "validity_days": 90,
+    "charge_currency": "GHS",
+    "base_charge_amount_pesewas": 15000,
+    "activate_after_price_approval": true
+  },
+  "regions": [
+    { "code": "ghana", "name": "Ghana", "display_currency": "GHS", "countries": ["GH"] },
+    { "code": "nigeria", "name": "Nigeria", "display_currency": "NGN", "countries": ["NG"] },
+    { "code": "united-states", "name": "United States", "display_currency": "USD", "countries": ["US"] },
+    { "code": "united-kingdom", "name": "United Kingdom", "display_currency": "GBP", "countries": ["GB"] },
+    { "code": "canada", "name": "Canada", "display_currency": "CAD", "countries": ["CA"] },
+    { "code": "euro-display", "name": "Euro display countries", "display_currency": "EUR", "countries": ["DE", "FR"] }
+  ],
+  "country_or_region_charge_overrides": [],
+  "exchange_rates": [],
+  "fallback": { "charge_currency": "GHS", "display_currency": "GHS" }
+}

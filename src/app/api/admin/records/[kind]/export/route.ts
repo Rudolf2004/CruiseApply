@@ -1,0 +1,5 @@
+import {serviceDatabase} from "@/lib/supabase/server";
+import {apiUser,apiError,ApiError} from "@/lib/http";
+import {recordKind,records,csv} from "@/features/admin-records/catalog";
+import {loadRecords} from "@/features/admin-records/service";
+export async function GET(request:Request,{params}:{params:Promise<{kind:string}>}){try{const {db,user}=await apiUser(true),kind=recordKind((await params).kind);if(!kind)throw new ApiError(404,"Report unavailable.");const result=await loadRecords(db,kind,Object.fromEntries(new URL(request.url).searchParams));const audit=await serviceDatabase().rpc("record_staff_export",{p_actor_id:user.id,p_kind:kind,p_page:result.filters.page,p_count:result.rows.length});if(audit.error)throw new ApiError(503,"Export audit unavailable. Please retry later.");return new Response("\uFEFF"+csv(records[kind].columns,result.rows),{headers:{"Content-Type":"text/csv; charset=utf-8","Content-Disposition":'attachment; filename="cruiseapply-'+kind+'-page-'+result.filters.page+'.csv"',"Cache-Control":"no-store","X-Content-Type-Options":"nosniff"}});}catch(e){return apiError(e);}}

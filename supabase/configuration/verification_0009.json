@@ -1,0 +1,155 @@
+{
+	"engine": "PostgreSQL 17.6 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+	"functions": [
+		{
+			"owner": "postgres",
+			"exists": true,
+			"grants": [
+				{
+					"grantee": "postgres",
+					"grantable": false,
+					"privilege": "EXECUTE"
+				},
+				{
+					"grantee": "service_role",
+					"grantable": false,
+					"privilege": "EXECUTE"
+				}
+			],
+			"signature": "public.get_voucher_login_material(text)",
+			"definition": "CREATE OR REPLACE FUNCTION public.get_voucher_login_material(p_serial text)\n RETURNS TABLE(voucher_id uuid, pin_hash text, credential_version integer)\n LANGUAGE sql\n STABLE SECURITY DEFINER\n SET search_path TO ''\nAS $function$\r\n  select v.id,\r\n    case when a.credential_state = 'current' then a.pin_hash else v.pin_hash end,\r\n    coalesce(a.credential_version, 0)\r\n  from public.vouchers v\r\n  join public.payments p on p.id = v.payment_id\r\n  left join public.voucher_access a on a.voucher_id = v.id\r\n  left join public.applicant_principals principal on principal.id = a.applicant_id\r\n  where v.serial = p_serial and length(p_serial) between 1 and 100\r\n    and p.paid_at is not null and p.status in ('successful','refunded')\r\n    and v.user_id is not distinct from p.user_id\r\n    and v.applicant_id is not distinct from p.applicant_id\r\n    and (a.id is null and v.user_id is not null\r\n      or a.id is not null and a.credential_state in ('legacy','current')\r\n        and a.revoked_at is null and a.suspended_at is null and principal.disabled_at is null);\r\n$function$\n",
+			"anon_execute": false,
+			"configuration": [
+				"search_path=\"\""
+			],
+			"service_execute": true,
+			"security_definer": true,
+			"authenticated_execute": false
+		},
+		{
+			"owner": "postgres",
+			"exists": true,
+			"grants": [
+				{
+					"grantee": "postgres",
+					"grantable": false,
+					"privilege": "EXECUTE"
+				},
+				{
+					"grantee": "service_role",
+					"grantable": false,
+					"privilege": "EXECUTE"
+				}
+			],
+			"signature": "public.open_verified_voucher_session(text,text,integer,text)",
+			"definition": "CREATE OR REPLACE FUNCTION public.open_verified_voucher_session(p_serial text, p_verified_pin_hash text, p_expected_credential_version integer, p_token_hash text)\n RETURNS TABLE(session_id uuid, voucher_access_id uuid, applicant_id uuid, voucher_id uuid, idle_expires_at timestamp with time zone, absolute_expires_at timestamp with time zone)\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO ''\nAS $function$\r\ndeclare\r\n  v public.vouchers; payment public.payments; access_row public.voucher_access;\r\n  principal public.applicant_principals; session_row public.applicant_sessions;\r\n  authoritative_hash text; at_time timestamptz;\r\nbegin\r\n  if p_serial is null or length(p_serial) not between 1 and 100\r\n    or p_verified_pin_hash is null or p_verified_pin_hash !~ '^s[12]:[a-f0-9]{32}:[a-f0-9]{64}$'\r\n    or p_expected_credential_version is null or p_expected_credential_version < 0\r\n    or p_token_hash is null or p_token_hash !~ '^[a-f0-9]{64}$' then\r\n    raise exception 'Applicant authentication unavailable';\r\n  end if;\r\n  -- Serialize first legacy binding; two logins cannot create competing owners.\r\n  select * into v from public.vouchers where serial = p_serial for update;\r\n  if not found then raise exception 'Applicant authentication unavailable'; end if;\r\n  select * into payment from public.payments where id = v.payment_id;\r\n  if not found or payment.paid_at is null or payment.status not in ('successful','refunded')\r\n    or v.user_id is distinct from payment.user_id\r\n    or v.applicant_id is distinct from payment.applicant_id then\r\n    raise exception 'Applicant authentication unavailable';\r\n  end if;\r\n  select * into access_row from public.voucher_access a where a.voucher_id = v.id for update;\r\n  if not found then\r\n    -- Explicit login adoption only. No email matching, owner reassignment or backfill.\r\n    if v.user_id is null or p_expected_credential_version <> 0\r\n      or v.pin_hash is distinct from p_verified_pin_hash then\r\n      raise exception 'Applicant authentication unavailable';\r\n    end if;\r\n    insert into public.applicant_principals default values returning * into principal;\r\n    insert into public.voucher_access(voucher_id, applicant_id, legacy_user_id, credential_state)\r\n      values(v.id, principal.id, v.user_id, 'legacy') returning * into access_row;\r\n    insert into public.audit_logs(actor_applicant_id, action, target_type, target_id)\r\n      values(principal.id, 'voucher_access_bound', 'voucher_access', access_row.id::text);\r\n  end if;\r\n  select * into principal from public.applicant_principals where id = access_row.applicant_id for share;\r\n  if not found or principal.disabled_at is not null or access_row.revoked_at is not null\r\n    or access_row.suspended_at is not null or access_row.credential_state not in ('legacy','current')\r\n    or access_row.credential_version <> p_expected_credential_version then\r\n    raise exception 'Applicant authentication unavailable';\r\n  end if;\r\n  authoritative_hash := case when access_row.credential_state = 'current' then access_row.pin_hash else v.pin_hash end;\r\n  if authoritative_hash is null or authoritative_hash is distinct from p_verified_pin_hash then\r\n    raise exception 'Applicant authentication unavailable';\r\n  end if;\r\n  -- Voucher redemption status/expiry is deliberately NOT a login gate.\r\n  at_time := clock_timestamp();\r\n  insert into public.applicant_sessions(voucher_access_id, token_hash, credential_version,\r\n    created_at, last_seen_at, idle_expires_at, absolute_expires_at)\r\n    values(access_row.id, p_token_hash, access_row.credential_version,\r\n      at_time, at_time, at_time + interval '168 hours', at_time + interval '720 hours')\r\n    returning * into session_row;\r\n  insert into public.audit_logs(actor_applicant_id, action, target_type, target_id)\r\n    values(principal.id, 'applicant_session_opened', 'applicant_sessions', session_row.id::text);\r\n  return query select session_row.id, access_row.id, principal.id, v.id,\r\n    session_row.idle_expires_at, session_row.absolute_expires_at;\r\nend; $function$\n",
+			"anon_execute": false,
+			"configuration": [
+				"search_path=\"\""
+			],
+			"service_execute": true,
+			"security_definer": true,
+			"authenticated_execute": false
+		},
+		{
+			"owner": "postgres",
+			"exists": true,
+			"grants": [
+				{
+					"grantee": "postgres",
+					"grantable": false,
+					"privilege": "EXECUTE"
+				},
+				{
+					"grantee": "service_role",
+					"grantable": false,
+					"privilege": "EXECUTE"
+				}
+			],
+			"signature": "public.resolve_voucher_session(text)",
+			"definition": "CREATE OR REPLACE FUNCTION public.resolve_voucher_session(p_token_hash text)\n RETURNS TABLE(session_id uuid, voucher_access_id uuid, applicant_id uuid, voucher_id uuid, payment_id uuid, application_id uuid, idle_expires_at timestamp with time zone, absolute_expires_at timestamp with time zone)\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO ''\nAS $function$\r\ndeclare\r\n  access_id uuid; access_row public.voucher_access; principal public.applicant_principals;\r\n  session_row public.applicant_sessions; at_time timestamptz;\r\nbegin\r\n  if p_token_hash is null or p_token_hash !~ '^[a-f0-9]{64}$' then return; end if;\r\n  select s.voucher_access_id into access_id from public.applicant_sessions s where s.token_hash = p_token_hash;\r\n  if not found then return; end if;\r\n  -- Lock access before session, matching future rotation/revocation operations.\r\n  select * into access_row from public.voucher_access where id = access_id for update;\r\n  if not found or access_row.revoked_at is not null or access_row.suspended_at is not null\r\n    or access_row.credential_state not in ('legacy','current') then return; end if;\r\n  select * into principal from public.applicant_principals where id = access_row.applicant_id for share;\r\n  if not found or principal.disabled_at is not null then return; end if;\r\n  select * into session_row from public.applicant_sessions s where s.token_hash = p_token_hash for update;\r\n  at_time := clock_timestamp();\r\n  if not found or session_row.voucher_access_id <> access_row.id\r\n    or session_row.revoked_at is not null or session_row.credential_version <> access_row.credential_version\r\n    or session_row.idle_expires_at <= at_time or session_row.absolute_expires_at <= at_time then return; end if;\r\n  update public.applicant_sessions s set last_seen_at = at_time,\r\n    idle_expires_at = least(at_time + interval '168 hours', s.absolute_expires_at)\r\n    where s.id = session_row.id returning * into session_row;\r\n  -- No user-wide joins, profiles, staff notes, credentials or unscoped notifications.\r\n  return query select session_row.id, access_row.id, principal.id, v.id, v.payment_id,\r\n    a.id, session_row.idle_expires_at, session_row.absolute_expires_at\r\n    from public.vouchers v left join public.applications a on a.voucher_id = v.id\r\n    where v.id = access_row.voucher_id;\r\nend; $function$\n",
+			"anon_execute": false,
+			"configuration": [
+				"search_path=\"\""
+			],
+			"service_execute": true,
+			"security_definer": true,
+			"authenticated_execute": false
+		},
+		{
+			"owner": "postgres",
+			"exists": true,
+			"grants": [
+				{
+					"grantee": "postgres",
+					"grantable": false,
+					"privilege": "EXECUTE"
+				},
+				{
+					"grantee": "service_role",
+					"grantable": false,
+					"privilege": "EXECUTE"
+				}
+			],
+			"signature": "public.logout_voucher_session(text)",
+			"definition": "CREATE OR REPLACE FUNCTION public.logout_voucher_session(p_token_hash text)\n RETURNS void\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO ''\nAS $function$\r\ndeclare access_id uuid; principal_id uuid; session_id uuid;\r\nbegin\r\n  if p_token_hash is null or p_token_hash !~ '^[a-f0-9]{64}$' then return; end if;\r\n  select s.voucher_access_id into access_id from public.applicant_sessions s where s.token_hash = p_token_hash;\r\n  if not found then return; end if;\r\n  select a.applicant_id into principal_id from public.voucher_access a where a.id = access_id for update;\r\n  if not found then return; end if;\r\n  -- Logout also revokes expired/suspended/stale-version sessions. Retries are no-ops.\r\n  update public.applicant_sessions s set revoked_at = clock_timestamp()\r\n    where s.token_hash = p_token_hash and s.voucher_access_id = access_id and s.revoked_at is null\r\n    returning s.id into session_id;\r\n  if found then\r\n    insert into public.audit_logs(actor_applicant_id, action, target_type, target_id)\r\n      values(principal_id, 'applicant_session_logged_out', 'applicant_sessions', session_id::text);\r\n  end if;\r\nend; $function$\n",
+			"anon_execute": false,
+			"configuration": [
+				"search_path=\"\""
+			],
+			"service_execute": true,
+			"security_definer": true,
+			"authenticated_execute": false
+		}
+	],
+	"private_tables": [
+		{
+			"rls": true,
+			"table": "applicant_notification_links",
+			"anon_select": false,
+			"authenticated_select": false
+		},
+		{
+			"rls": true,
+			"table": "applicant_principals",
+			"anon_select": false,
+			"authenticated_select": false
+		},
+		{
+			"rls": true,
+			"table": "applicant_sessions",
+			"anon_select": false,
+			"authenticated_select": false
+		},
+		{
+			"rls": true,
+			"table": "guest_checkouts",
+			"anon_select": false,
+			"authenticated_select": false
+		},
+		{
+			"rls": true,
+			"table": "voucher_access",
+			"anon_select": false,
+			"authenticated_select": false
+		},
+		{
+			"rls": true,
+			"table": "voucher_contact_challenges",
+			"anon_select": false,
+			"authenticated_select": false
+		},
+		{
+			"rls": true,
+			"table": "voucher_contacts",
+			"anon_select": false,
+			"authenticated_select": false
+		},
+		{
+			"rls": true,
+			"table": "voucher_credential_deliveries",
+			"anon_select": false,
+			"authenticated_select": false
+		}
+	]
+}

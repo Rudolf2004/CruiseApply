@@ -1,0 +1,2671 @@
+{
+	"indexes": [
+		{
+			"indexdef": "CREATE UNIQUE INDEX admin_notes_pkey ON public.admin_notes USING btree (id)",
+			"indexname": "admin_notes_pkey",
+			"tablename": "admin_notes",
+			"schemaname": "public",
+			"tablespace": null
+		},
+		{
+			"indexdef": "CREATE INDEX applicant_notification_access ON public.applicant_notification_links USING btree (voucher_access_id)",
+			"indexname": "applicant_notification_access",
+			"tablename": "applicant_notification_links",
+			"schemaname": "public",
+			"tablespace": null
+		},
+		{
+			"indexdef": "CREATE INDEX applicant_notification_application ON public.applicant_notification_links USING btree (application_id) WHERE (application_id IS NOT NULL)",
+			"indexname": "applicant_notification_application",
+			"tablename": "applicant_notification_links",
+			"schemaname": "public",
+			"tablespace": null
+		},
+		{
+			"indexdef": "CREATE UNIQUE INDEX applicant_notification_links_pkey ON public.applicant_notification_links USING btree (notification_id)",
+			"indexname": "applicant_notification_links_pkey",
+			"tablename": "applicant_notification_links",
+			"schemaname": "public",
+			"tablespace": null
+		},
+		{
+			"indexdef": "CREATE INDEX applicant_notification_payment ON public.applicant_notification_links USING btree (payment_id) WHERE (payment_id IS NOT NULL)",
+			"indexname": "applicant_notification_payment",
+			"tablename": "applicant_notification_links",
+			"schemaname": "public",
+			"tablespace": null
+		},
+		{
+			"indexdef": "CREATE UNIQUE INDEX applicant_principals_pkey ON public.applicant_principals USING btree (id)",
+			"indexname": "applicant_principals_pkey",
+			"tablename": "applicant_principals",
+			"schemaname": "public",
+			"tablespace": null
+		},
+		{
+			"indexdef": "CREATE INDEX applicant_sessions_access ON public.applicant_sessions USING btree (voucher_access_id)",
+			"indexname": "applicant_sessions_access",
+			"tablename": "applicant_sessions",
+			"schemaname": "public",
+			"tablespace": null
+		},
+		{
+			"indexdef": "CREATE INDEX applicant_sessions_expiry ON public.applicant_sessions USING btree (absolute_expires_at)",
+			"indexname": "applicant_sessions_expiry",
+			"tablename": "applicant_sessions",
+			"schemaname": "public",
+			"tablespace": null
+		},
+		{
+			"indexdef": "CREATE UNIQUE INDEX applicant_sessions_pkey ON public.applicant_sessions USING btree (id)",
+			"indexname": "applicant_sessions_pkey",
+			"tablename": "applicant_sessions",
+			"schemaname": "public",
+			"tablespace": null
+		},
+		{
+			"indexdef": "CREATE UNIQUE INDEX applicant_sessions_token_hash_key ON public.applicant_sessions USING btree (token_hash)",
+			"indexname": "applicant_sessions_token_hash_key",
+			"tablename": "applicant_sessions",
+			"schemaname": "public",
+			"tablespace": null
+		},
+		{
+			"indexdef": "CREATE UNIQUE INDEX applicants_pkey ON public.applicants USING btree (id)",
+			"indexname": "applicants_pkey",
+			"tablename": "applicants",
+			"schemaname": "public",
+			"tablespace": null
+		},
+		{
+			"indexdef": "CREATE INDEX applicants_principal_idx ON public.applicants USING btree (applicant_id) WHERE (applicant_id IS NOT NULL)",
+			"indexname": "applicants_principal_idx",
+			"tablename": "applicants",
+			"schemaname": "public",
+			"tablespace": null
+		},
+		{
+			"indexdef": "CREATE UNIQUE INDEX applicants_principal_unique ON public.applicants USING btree (applicant_id) WHERE (applicant_id IS NOT NULL)",
+			"indexname": "applicants_principal_unique",
+			"tablename": "applicants",
+			"schemaname": "public",
+			"tablespace": null
+		},
+		{
+			"indexdef": "CREATE UNIQUE INDEX applicants_user_id_key ON public.applicants USING btree (user_id)",
+			"indexname": "applicants_user_id_key",
+			"tablename": "applicants",
+			"schemaname": "public",
+			"tablespace": null
+		},
+		{
+			"indexdef": "CREATE UNIQUE INDEX application_answers_pkey ON public.application_answers USING btree (application_id, question_id)",
+			"indexname": "application_answers_pkey",
+			"tablename": "application_answers",
+			"schemaname": "public",
+			"tablespace": null
+		},
+		{
+			"indexdef": "CREATE UNIQUE INDEX application_documents_pkey ON public.application_documents USING btree (id)",
+			"indexname": "application_documents_pkey",
+			"tablename": "application_documents",
+			"schemaname": "public",
+			"tablespace": null
+		},
+		{
+			"indexdef": "CREATE INDEX application_documents_principal_idx ON public.application_documents USING btree (applicant_id) WHERE (applicant_id IS NOT NULL)",
+			"indexname": "application_documents_principal_idx",
+			"tablename": "application_documents",
+			"schemaname": "public",
+			"tablespace": null
+		},
+		{
+			"indexdef": "CREATE UNIQUE INDEX application_documents_storage_path_key ON public.application_documents USING btree (storage_path)",
+			"indexname": "application_documents_storage_path_key",
+			"tablename": "application_documents",
+			"schemaname": "public",
+			"tablespace": null
+		},
+		{
+			"indexdef": "CREATE INDEX documents_application_index ON public.application_documents USING btree (application_id)",
+			"indexname": "documents_application_index",
+			"tablename": "application_documents",
+			"schemaname": "public",
+			"tablespace": null
+		},
+		{
+			"indexdef": "CREATE UNIQUE INDEX application_education_pkey ON public.application_education USING btree (id)",
+			"indexname": "application_education_pkey",
+			"tablename": "application_education",
+			"schemaname": "public",
+			"tablespace": null
+		},
+		{
+			"indexdef": "CREATE UNIQUE INDEX application_experience_pkey ON public.application_experience USING btree (id)",
+			"indexname": "application_experience_pkey",
+			"tablename": "application_experience",
+			"schemaname": "public",
+			"tablespace": null
+		},
+		{
+			"indexdef": "CREATE UNIQUE INDEX application_matches_application_id_employer_opportunity_id_key ON public.application_matches USING btree (application_id, employer_opportunity_id)",
+			"indexname": "application_matches_application_id_employer_opportunity_id_key",
+			"tablename": "application_matches",
+			"schemaname": "public",
+			"tablespace": null
+		},
+		{
+			"indexdef": "CREATE INDEX application_matches_application_index ON public.application_matches USING btree (application_id)",
+			"indexname": "application_matches_application_index",
+			"tablename": "application_matches",
+			"schemaname": "public",
+			"tablespace": null
+		},
+		{
+			"indexdef": "CREATE UNIQUE INDEX application_matches_pkey ON public.application_matches USING btree (id)",
+			"indexname": "application_matches_pkey",
+			"tablename": "application_matches",
+			"schemaname": "public",
+			"tablespace": null
+		},
+		{
+			"indexdef": "CREATE UNIQUE INDEX application_review_commands_pkey ON public.application_review_commands USING btree (request_id)",
+			"indexname": "application_review_commands_pkey",
+			"tablename": "application_review_commands",
+			"schemaname": "public",
+			"tablespace": null
+		},
+		{
+			"indexdef": "CREATE UNIQUE INDEX application_status_history_pkey ON public.application_status_history USING btree (id)",
+			"indexname": "application_status_history_pkey",
+			"tablename": "application_status_history",
+			"schemaname": "public",
+			"tablespace": null
+		},
+		{
+			"indexdef": "CREATE INDEX history_applicant_actor ON public.application_status_history USING btree (actor_applicant_id) WHERE (actor_applicant_id IS NOT NULL)",
+			"indexname": "history_applicant_actor",
+			"tablename": "application_status_history",
+			"schemaname": "public",
+			"tablespace": null
+		},
+		{
+			"indexdef": "CREATE INDEX history_application_index ON public.application_status_history USING btree (application_id, created_at)",
+			"indexname": "history_application_index",
+			"tablename": "application_status_history",
+			"schemaname": "public",
+			"tablespace": null
+		},
+		{
+			"indexdef": "CREATE INDEX applications_owner_index ON public.applications USING btree (user_id, created_at DESC)",
+			"indexname": "applications_owner_index",
+			"tablename": "applications",
+			"schemaname": "public",
+			"tablespace": null
+		},
+		{
+			"indexdef": "CREATE UNIQUE INDEX applications_pkey ON public.applications USING btree (id)",
+			"indexname": "applications_pkey",
+			"tablename": "applications",
+			"schemaname": "public",
+			"tablespace": null
+		},
+		{
+			"indexdef": "CREATE INDEX applications_principal_idx ON public.applications USING btree (applicant_id) WHERE (applicant_id IS NOT NULL)",
+			"indexname": "applications_principal_idx",
+			"tablename": "applications",
+			"schemaname": "public",
+			"tablespace": null
+		},
+		{
+			"indexdef": "CREATE UNIQUE INDEX applications_reference_key ON public.applications USING btree (reference)",
+			"indexname": "applications_reference_key",
+			"tablename": "applications",
+			"schemaname": "public",
+			"tablespace": null
+		},
+		{
+			"indexdef": "CREATE INDEX applications_status_index ON public.applications USING btree (status, job_id)",
+			"indexname": "applications_status_index",
+			"tablename": "applications",
+			"schemaname": "public",
+			"tablespace": null
+		},
+		{
+			"indexdef": "CREATE UNIQUE INDEX applications_voucher_id_key ON public.applications USING btree (voucher_id)",
+			"indexname": "applications_voucher_id_key",
+			"tablename": "applications",
+			"schemaname": "public",
+			"tablespace": null
+		},
+		{
+			"indexdef": "CREATE UNIQUE INDEX one_principal_application ON public.applications USING btree (applicant_id) WHERE (applicant_id IS NOT NULL)",
+			"indexname": "one_principal_application",
+			"tablename": "applications",
+			"schemaname": "public",
+			"tablespace": null
+		},
+		{
+			"indexdef": "CREATE INDEX audit_applicant_actor ON public.audit_logs USING btree (actor_applicant_id) WHERE (actor_applicant_id IS NOT NULL)",
+			"indexname": "audit_applicant_actor",
+			"tablename": "audit_logs",
+			"schemaname": "public",
+			"tablespace": null
+		},
+		{
+			"indexdef": "CREATE UNIQUE INDEX audit_logs_pkey ON public.audit_logs USING btree (id)",
+			"indexname": "audit_logs_pkey",
+			"tablename": "audit_logs",
+			"schemaname": "public",
+			"tablespace": null
+		},
+		{
+			"indexdef": "CREATE INDEX employer_opportunities_employer_index ON public.employer_opportunities USING btree (employer_id)",
+			"indexname": "employer_opportunities_employer_index",
+			"tablename": "employer_opportunities",
+			"schemaname": "public",
+			"tablespace": null
+		},
+		{
+			"indexdef": "CREATE UNIQUE INDEX employer_opportunities_pkey ON public.employer_opportunities USING btree (id)",
+			"indexname": "employer_opportunities_pkey",
+			"tablename": "employer_opportunities",
+			"schemaname": "public",
+			"tablespace": null
+		},
+		{
+			"indexdef": "CREATE UNIQUE INDEX employers_pkey ON public.employers USING btree (id)",
+			"indexname": "employers_pkey",
+			"tablename": "employers",
+			"schemaname": "public",
+			"tablespace": null
+		},
+		{
+			"indexdef": "CREATE INDEX guest_checkout_country ON public.guest_checkouts USING btree (country_code)",
+			"indexname": "guest_checkout_country",
+			"tablename": "guest_checkouts",
+			"schemaname": "public",
+			"tablespace": null
+		},
+		{
+			"indexdef": "CREATE UNIQUE INDEX guest_checkouts_applicant_id_key ON public.guest_checkouts USING btree (applicant_id)",
+			"indexname": "guest_checkouts_applicant_id_key",
+			"tablename": "guest_checkouts",
+			"schemaname": "public",
+			"tablespace": null
+		},
+		{
+			"indexdef": "CREATE UNIQUE INDEX guest_checkouts_capability_hash_key ON public.guest_checkouts USING btree (capability_hash)",
+			"indexname": "guest_checkouts_capability_hash_key",
+			"tablename": "guest_checkouts",
+			"schemaname": "public",
+			"tablespace": null
+		},
+		{
+			"indexdef": "CREATE UNIQUE INDEX guest_checkouts_id_applicant_id_key ON public.guest_checkouts USING btree (id, applicant_id)",
+			"indexname": "guest_checkouts_id_applicant_id_key",
+			"tablename": "guest_checkouts",
+			"schemaname": "public",
+			"tablespace": null
+		},
+		{
+			"indexdef": "CREATE UNIQUE INDEX guest_checkouts_pkey ON public.guest_checkouts USING btree (id)",
+			"indexname": "guest_checkouts_pkey",
+			"tablename": "guest_checkouts",
+			"schemaname": "public",
+			"tablespace": null
+		},
+		{
+			"indexdef": "CREATE INDEX jobs_filters_index ON public.jobs USING btree (category, department, company, location)",
+			"indexname": "jobs_filters_index",
+			"tablename": "jobs",
+			"schemaname": "public",
+			"tablespace": null
+		},
+		{
+			"indexdef": "CREATE UNIQUE INDEX jobs_pkey ON public.jobs USING btree (id)",
+			"indexname": "jobs_pkey",
+			"tablename": "jobs",
+			"schemaname": "public",
+			"tablespace": null
+		},
+		{
+			"indexdef": "CREATE INDEX jobs_public_index ON public.jobs USING btree (status, featured, created_at DESC)",
+			"indexname": "jobs_public_index",
+			"tablename": "jobs",
+			"schemaname": "public",
+			"tablespace": null
+		},
+		{
+			"indexdef": "CREATE UNIQUE INDEX jobs_slug_key ON public.jobs USING btree (slug)",
+			"indexname": "jobs_slug_key",
+			"tablename": "jobs",
+			"schemaname": "public",
+			"tablespace": null
+		},
+		{
+			"indexdef": "CREATE INDEX notifications_owner_index ON public.notifications USING btree (user_id, created_at DESC)",
+			"indexname": "notifications_owner_index",
+			"tablename": "notifications",
+			"schemaname": "public",
+			"tablespace": null
+		},
+		{
+			"indexdef": "CREATE UNIQUE INDEX notifications_pkey ON public.notifications USING btree (id)",
+			"indexname": "notifications_pkey",
+			"tablename": "notifications",
+			"schemaname": "public",
+			"tablespace": null
+		},
+		{
+			"indexdef": "CREATE INDEX notifications_principal_idx ON public.notifications USING btree (applicant_id) WHERE (applicant_id IS NOT NULL)",
+			"indexname": "notifications_principal_idx",
+			"tablename": "notifications",
+			"schemaname": "public",
+			"tablespace": null
+		},
+		{
+			"indexdef": "CREATE INDEX payment_quotes_owner ON public.payment_quotes USING btree (user_id, created_at DESC)",
+			"indexname": "payment_quotes_owner",
+			"tablename": "payment_quotes",
+			"schemaname": "public",
+			"tablespace": null
+		},
+		{
+			"indexdef": "CREATE UNIQUE INDEX payment_quotes_pkey ON public.payment_quotes USING btree (id)",
+			"indexname": "payment_quotes_pkey",
+			"tablename": "payment_quotes",
+			"schemaname": "public",
+			"tablespace": null
+		},
+		{
+			"indexdef": "CREATE INDEX payment_quotes_principal_idx ON public.payment_quotes USING btree (applicant_id) WHERE (applicant_id IS NOT NULL)",
+			"indexname": "payment_quotes_principal_idx",
+			"tablename": "payment_quotes",
+			"schemaname": "public",
+			"tablespace": null
+		},
+		{
+			"indexdef": "CREATE INDEX quote_guest_checkout_idx ON public.payment_quotes USING btree (guest_checkout_id, applicant_id) WHERE (guest_checkout_id IS NOT NULL)",
+			"indexname": "quote_guest_checkout_idx",
+			"tablename": "payment_quotes",
+			"schemaname": "public",
+			"tablespace": null
+		},
+		{
+			"indexdef": "CREATE UNIQUE INDEX one_guest_payment ON public.payments USING btree (guest_checkout_id) WHERE (guest_checkout_id IS NOT NULL)",
+			"indexname": "one_guest_payment",
+			"tablename": "payments",
+			"schemaname": "public",
+			"tablespace": null
+		},
+		{
+			"indexdef": "CREATE INDEX payment_guest_checkout_idx ON public.payments USING btree (guest_checkout_id, applicant_id) WHERE (guest_checkout_id IS NOT NULL)",
+			"indexname": "payment_guest_checkout_idx",
+			"tablename": "payments",
+			"schemaname": "public",
+			"tablespace": null
+		},
+		{
+			"indexdef": "CREATE INDEX payments_owner_index ON public.payments USING btree (user_id, created_at DESC)",
+			"indexname": "payments_owner_index",
+			"tablename": "payments",
+			"schemaname": "public",
+			"tablespace": null
+		},
+		{
+			"indexdef": "CREATE UNIQUE INDEX payments_pkey ON public.payments USING btree (id)",
+			"indexname": "payments_pkey",
+			"tablename": "payments",
+			"schemaname": "public",
+			"tablespace": null
+		},
+		{
+			"indexdef": "CREATE INDEX payments_principal_idx ON public.payments USING btree (applicant_id) WHERE (applicant_id IS NOT NULL)",
+			"indexname": "payments_principal_idx",
+			"tablename": "payments",
+			"schemaname": "public",
+			"tablespace": null
+		},
+		{
+			"indexdef": "CREATE UNIQUE INDEX payments_quote_id_key ON public.payments USING btree (quote_id)",
+			"indexname": "payments_quote_id_key",
+			"tablename": "payments",
+			"schemaname": "public",
+			"tablespace": null
+		},
+		{
+			"indexdef": "CREATE UNIQUE INDEX payments_reference_key ON public.payments USING btree (reference)",
+			"indexname": "payments_reference_key",
+			"tablename": "payments",
+			"schemaname": "public",
+			"tablespace": null
+		},
+		{
+			"indexdef": "CREATE UNIQUE INDEX platform_settings_pkey ON public.platform_settings USING btree (key)",
+			"indexname": "platform_settings_pkey",
+			"tablename": "platform_settings",
+			"schemaname": "public",
+			"tablespace": null
+		},
+		{
+			"indexdef": "CREATE UNIQUE INDEX pricing_countries_pkey ON public.pricing_countries USING btree (code)",
+			"indexname": "pricing_countries_pkey",
+			"tablename": "pricing_countries",
+			"schemaname": "public",
+			"tablespace": null
+		},
+		{
+			"indexdef": "CREATE UNIQUE INDEX pricing_currencies_pkey ON public.pricing_currencies USING btree (code)",
+			"indexname": "pricing_currencies_pkey",
+			"tablename": "pricing_currencies",
+			"schemaname": "public",
+			"tablespace": null
+		},
+		{
+			"indexdef": "CREATE UNIQUE INDEX pricing_exchange_rates_pkey ON public.pricing_exchange_rates USING btree (quote_currency)",
+			"indexname": "pricing_exchange_rates_pkey",
+			"tablename": "pricing_exchange_rates",
+			"schemaname": "public",
+			"tablespace": null
+		},
+		{
+			"indexdef": "CREATE UNIQUE INDEX pricing_regions_code_key ON public.pricing_regions USING btree (code)",
+			"indexname": "pricing_regions_code_key",
+			"tablename": "pricing_regions",
+			"schemaname": "public",
+			"tablespace": null
+		},
+		{
+			"indexdef": "CREATE UNIQUE INDEX pricing_regions_pkey ON public.pricing_regions USING btree (id)",
+			"indexname": "pricing_regions_pkey",
+			"tablename": "pricing_regions",
+			"schemaname": "public",
+			"tablespace": null
+		},
+		{
+			"indexdef": "CREATE UNIQUE INDEX profiles_pkey ON public.profiles USING btree (id)",
+			"indexname": "profiles_pkey",
+			"tablename": "profiles",
+			"schemaname": "public",
+			"tablespace": null
+		},
+		{
+			"indexdef": "CREATE UNIQUE INDEX request_limits_pkey ON public.request_limits USING btree (key)",
+			"indexname": "request_limits_pkey",
+			"tablename": "request_limits",
+			"schemaname": "public",
+			"tablespace": null
+		},
+		{
+			"indexdef": "CREATE UNIQUE INDEX voucher_access_applicant_id_key ON public.voucher_access USING btree (applicant_id)",
+			"indexname": "voucher_access_applicant_id_key",
+			"tablename": "voucher_access",
+			"schemaname": "public",
+			"tablespace": null
+		},
+		{
+			"indexdef": "CREATE INDEX voucher_access_legacy_owner ON public.voucher_access USING btree (legacy_user_id) WHERE (legacy_user_id IS NOT NULL)",
+			"indexname": "voucher_access_legacy_owner",
+			"tablename": "voucher_access",
+			"schemaname": "public",
+			"tablespace": null
+		},
+		{
+			"indexdef": "CREATE UNIQUE INDEX voucher_access_pkey ON public.voucher_access USING btree (id)",
+			"indexname": "voucher_access_pkey",
+			"tablename": "voucher_access",
+			"schemaname": "public",
+			"tablespace": null
+		},
+		{
+			"indexdef": "CREATE UNIQUE INDEX voucher_access_voucher_id_key ON public.voucher_access USING btree (voucher_id)",
+			"indexname": "voucher_access_voucher_id_key",
+			"tablename": "voucher_access",
+			"schemaname": "public",
+			"tablespace": null
+		},
+		{
+			"indexdef": "CREATE INDEX voucher_challenges_access ON public.voucher_contact_challenges USING btree (voucher_access_id)",
+			"indexname": "voucher_challenges_access",
+			"tablename": "voucher_contact_challenges",
+			"schemaname": "public",
+			"tablespace": null
+		},
+		{
+			"indexdef": "CREATE INDEX voucher_challenges_contact ON public.voucher_contact_challenges USING btree (contact_id, voucher_access_id)",
+			"indexname": "voucher_challenges_contact",
+			"tablename": "voucher_contact_challenges",
+			"schemaname": "public",
+			"tablespace": null
+		},
+		{
+			"indexdef": "CREATE UNIQUE INDEX voucher_contact_challenges_pkey ON public.voucher_contact_challenges USING btree (id)",
+			"indexname": "voucher_contact_challenges_pkey",
+			"tablename": "voucher_contact_challenges",
+			"schemaname": "public",
+			"tablespace": null
+		},
+		{
+			"indexdef": "CREATE UNIQUE INDEX voucher_contact_challenges_token_hash_key ON public.voucher_contact_challenges USING btree (token_hash)",
+			"indexname": "voucher_contact_challenges_token_hash_key",
+			"tablename": "voucher_contact_challenges",
+			"schemaname": "public",
+			"tablespace": null
+		},
+		{
+			"indexdef": "CREATE UNIQUE INDEX voucher_contacts_id_voucher_access_id_key ON public.voucher_contacts USING btree (id, voucher_access_id)",
+			"indexname": "voucher_contacts_id_voucher_access_id_key",
+			"tablename": "voucher_contacts",
+			"schemaname": "public",
+			"tablespace": null
+		},
+		{
+			"indexdef": "CREATE UNIQUE INDEX voucher_contacts_pkey ON public.voucher_contacts USING btree (id)",
+			"indexname": "voucher_contacts_pkey",
+			"tablename": "voucher_contacts",
+			"schemaname": "public",
+			"tablespace": null
+		},
+		{
+			"indexdef": "CREATE UNIQUE INDEX voucher_contacts_voucher_access_id_key ON public.voucher_contacts USING btree (voucher_access_id)",
+			"indexname": "voucher_contacts_voucher_access_id_key",
+			"tablename": "voucher_contacts",
+			"schemaname": "public",
+			"tablespace": null
+		},
+		{
+			"indexdef": "CREATE UNIQUE INDEX voucher_credential_deliveries_capability_hash_key ON public.voucher_credential_deliveries USING btree (capability_hash)",
+			"indexname": "voucher_credential_deliveries_capability_hash_key",
+			"tablename": "voucher_credential_deliveries",
+			"schemaname": "public",
+			"tablespace": null
+		},
+		{
+			"indexdef": "CREATE UNIQUE INDEX voucher_credential_deliveries_guest_checkout_id_key ON public.voucher_credential_deliveries USING btree (guest_checkout_id)",
+			"indexname": "voucher_credential_deliveries_guest_checkout_id_key",
+			"tablename": "voucher_credential_deliveries",
+			"schemaname": "public",
+			"tablespace": null
+		},
+		{
+			"indexdef": "CREATE UNIQUE INDEX voucher_credential_deliveries_pkey ON public.voucher_credential_deliveries USING btree (id)",
+			"indexname": "voucher_credential_deliveries_pkey",
+			"tablename": "voucher_credential_deliveries",
+			"schemaname": "public",
+			"tablespace": null
+		},
+		{
+			"indexdef": "CREATE UNIQUE INDEX voucher_credential_deliveries_voucher_access_id_key ON public.voucher_credential_deliveries USING btree (voucher_access_id)",
+			"indexname": "voucher_credential_deliveries_voucher_access_id_key",
+			"tablename": "voucher_credential_deliveries",
+			"schemaname": "public",
+			"tablespace": null
+		},
+		{
+			"indexdef": "CREATE UNIQUE INDEX voucher_country_price ON public.voucher_price_overrides USING btree (voucher_type_id, country_code) WHERE (country_code IS NOT NULL)",
+			"indexname": "voucher_country_price",
+			"tablename": "voucher_price_overrides",
+			"schemaname": "public",
+			"tablespace": null
+		},
+		{
+			"indexdef": "CREATE UNIQUE INDEX voucher_price_overrides_pkey ON public.voucher_price_overrides USING btree (id)",
+			"indexname": "voucher_price_overrides_pkey",
+			"tablename": "voucher_price_overrides",
+			"schemaname": "public",
+			"tablespace": null
+		},
+		{
+			"indexdef": "CREATE UNIQUE INDEX voucher_region_price ON public.voucher_price_overrides USING btree (voucher_type_id, region_id) WHERE (region_id IS NOT NULL)",
+			"indexname": "voucher_region_price",
+			"tablename": "voucher_price_overrides",
+			"schemaname": "public",
+			"tablespace": null
+		},
+		{
+			"indexdef": "CREATE UNIQUE INDEX voucher_types_code_key ON public.voucher_types USING btree (code)",
+			"indexname": "voucher_types_code_key",
+			"tablename": "voucher_types",
+			"schemaname": "public",
+			"tablespace": null
+		},
+		{
+			"indexdef": "CREATE UNIQUE INDEX voucher_types_pkey ON public.voucher_types USING btree (id)",
+			"indexname": "voucher_types_pkey",
+			"tablename": "voucher_types",
+			"schemaname": "public",
+			"tablespace": null
+		},
+		{
+			"indexdef": "CREATE UNIQUE INDEX one_principal_voucher ON public.vouchers USING btree (applicant_id) WHERE (applicant_id IS NOT NULL)",
+			"indexname": "one_principal_voucher",
+			"tablename": "vouchers",
+			"schemaname": "public",
+			"tablespace": null
+		},
+		{
+			"indexdef": "CREATE INDEX vouchers_owner_index ON public.vouchers USING btree (user_id)",
+			"indexname": "vouchers_owner_index",
+			"tablename": "vouchers",
+			"schemaname": "public",
+			"tablespace": null
+		},
+		{
+			"indexdef": "CREATE UNIQUE INDEX vouchers_payment_id_key ON public.vouchers USING btree (payment_id)",
+			"indexname": "vouchers_payment_id_key",
+			"tablename": "vouchers",
+			"schemaname": "public",
+			"tablespace": null
+		},
+		{
+			"indexdef": "CREATE UNIQUE INDEX vouchers_pkey ON public.vouchers USING btree (id)",
+			"indexname": "vouchers_pkey",
+			"tablename": "vouchers",
+			"schemaname": "public",
+			"tablespace": null
+		},
+		{
+			"indexdef": "CREATE INDEX vouchers_principal_idx ON public.vouchers USING btree (applicant_id) WHERE (applicant_id IS NOT NULL)",
+			"indexname": "vouchers_principal_idx",
+			"tablename": "vouchers",
+			"schemaname": "public",
+			"tablespace": null
+		},
+		{
+			"indexdef": "CREATE UNIQUE INDEX vouchers_serial_key ON public.vouchers USING btree (serial)",
+			"indexname": "vouchers_serial_key",
+			"tablename": "vouchers",
+			"schemaname": "public",
+			"tablespace": null
+		}
+	],
+	"policies": [
+		{
+			"cmd": "SELECT",
+			"qual": "is_admin()",
+			"roles": [
+				"authenticated"
+			],
+			"tablename": "admin_notes",
+			"permissive": "PERMISSIVE",
+			"policyname": "notes_admin_read",
+			"schemaname": "public",
+			"with_check": null
+		},
+		{
+			"cmd": "SELECT",
+			"qual": "((user_id = auth.uid()) OR is_admin())",
+			"roles": [
+				"authenticated"
+			],
+			"tablename": "applicants",
+			"permissive": "PERMISSIVE",
+			"policyname": "owner_read",
+			"schemaname": "public",
+			"with_check": null
+		},
+		{
+			"cmd": "SELECT",
+			"qual": "(EXISTS ( SELECT 1\n   FROM applications a\n  WHERE ((a.id = application_answers.application_id) AND ((a.user_id = auth.uid()) OR is_admin()))))",
+			"roles": [
+				"authenticated"
+			],
+			"tablename": "application_answers",
+			"permissive": "PERMISSIVE",
+			"policyname": "application_owner_read",
+			"schemaname": "public",
+			"with_check": null
+		},
+		{
+			"cmd": "SELECT",
+			"qual": "((user_id = auth.uid()) OR is_admin())",
+			"roles": [
+				"authenticated"
+			],
+			"tablename": "application_documents",
+			"permissive": "PERMISSIVE",
+			"policyname": "owner_read",
+			"schemaname": "public",
+			"with_check": null
+		},
+		{
+			"cmd": "SELECT",
+			"qual": "(EXISTS ( SELECT 1\n   FROM applications a\n  WHERE ((a.id = application_education.application_id) AND ((a.user_id = auth.uid()) OR is_admin()))))",
+			"roles": [
+				"authenticated"
+			],
+			"tablename": "application_education",
+			"permissive": "PERMISSIVE",
+			"policyname": "application_owner_read",
+			"schemaname": "public",
+			"with_check": null
+		},
+		{
+			"cmd": "SELECT",
+			"qual": "(EXISTS ( SELECT 1\n   FROM applications a\n  WHERE ((a.id = application_experience.application_id) AND ((a.user_id = auth.uid()) OR is_admin()))))",
+			"roles": [
+				"authenticated"
+			],
+			"tablename": "application_experience",
+			"permissive": "PERMISSIVE",
+			"policyname": "application_owner_read",
+			"schemaname": "public",
+			"with_check": null
+		},
+		{
+			"cmd": "SELECT",
+			"qual": "is_admin()",
+			"roles": [
+				"authenticated"
+			],
+			"tablename": "application_matches",
+			"permissive": "PERMISSIVE",
+			"policyname": "application_matches_admin_read",
+			"schemaname": "public",
+			"with_check": null
+		},
+		{
+			"cmd": "SELECT",
+			"qual": "(EXISTS ( SELECT 1\n   FROM applications a\n  WHERE ((a.id = application_status_history.application_id) AND ((a.user_id = auth.uid()) OR is_admin()))))",
+			"roles": [
+				"authenticated"
+			],
+			"tablename": "application_status_history",
+			"permissive": "PERMISSIVE",
+			"policyname": "application_owner_read",
+			"schemaname": "public",
+			"with_check": null
+		},
+		{
+			"cmd": "SELECT",
+			"qual": "((user_id = auth.uid()) OR is_admin())",
+			"roles": [
+				"authenticated"
+			],
+			"tablename": "applications",
+			"permissive": "PERMISSIVE",
+			"policyname": "owner_read",
+			"schemaname": "public",
+			"with_check": null
+		},
+		{
+			"cmd": "SELECT",
+			"qual": "is_admin()",
+			"roles": [
+				"authenticated"
+			],
+			"tablename": "audit_logs",
+			"permissive": "PERMISSIVE",
+			"policyname": "audit_admin_read",
+			"schemaname": "public",
+			"with_check": null
+		},
+		{
+			"cmd": "SELECT",
+			"qual": "is_admin()",
+			"roles": [
+				"authenticated"
+			],
+			"tablename": "employer_opportunities",
+			"permissive": "PERMISSIVE",
+			"policyname": "employer_opportunities_admin_read",
+			"schemaname": "public",
+			"with_check": null
+		},
+		{
+			"cmd": "SELECT",
+			"qual": "is_admin()",
+			"roles": [
+				"authenticated"
+			],
+			"tablename": "employers",
+			"permissive": "PERMISSIVE",
+			"policyname": "employers_admin_read",
+			"schemaname": "public",
+			"with_check": null
+		},
+		{
+			"cmd": "SELECT",
+			"qual": "((status = 'published'::job_status) OR is_admin())",
+			"roles": [
+				"public"
+			],
+			"tablename": "jobs",
+			"permissive": "PERMISSIVE",
+			"policyname": "jobs_read",
+			"schemaname": "public",
+			"with_check": null
+		},
+		{
+			"cmd": "SELECT",
+			"qual": "((user_id = auth.uid()) OR is_admin())",
+			"roles": [
+				"authenticated"
+			],
+			"tablename": "notifications",
+			"permissive": "PERMISSIVE",
+			"policyname": "owner_read",
+			"schemaname": "public",
+			"with_check": null
+		},
+		{
+			"cmd": "SELECT",
+			"qual": "((user_id = auth.uid()) OR is_admin())",
+			"roles": [
+				"authenticated"
+			],
+			"tablename": "payments",
+			"permissive": "PERMISSIVE",
+			"policyname": "owner_read",
+			"schemaname": "public",
+			"with_check": null
+		},
+		{
+			"cmd": "SELECT",
+			"qual": "(public OR is_admin())",
+			"roles": [
+				"public"
+			],
+			"tablename": "platform_settings",
+			"permissive": "PERMISSIVE",
+			"policyname": "settings_read",
+			"schemaname": "public",
+			"with_check": null
+		},
+		{
+			"cmd": "SELECT",
+			"qual": "active",
+			"roles": [
+				"authenticated"
+			],
+			"tablename": "pricing_countries",
+			"permissive": "PERMISSIVE",
+			"policyname": "country_selection",
+			"schemaname": "public",
+			"with_check": null
+		},
+		{
+			"cmd": "UPDATE",
+			"qual": "(id = auth.uid())",
+			"roles": [
+				"authenticated"
+			],
+			"tablename": "profiles",
+			"permissive": "PERMISSIVE",
+			"policyname": "profiles_edit",
+			"schemaname": "public",
+			"with_check": "(id = auth.uid())"
+		},
+		{
+			"cmd": "SELECT",
+			"qual": "((id = auth.uid()) OR is_admin())",
+			"roles": [
+				"authenticated"
+			],
+			"tablename": "profiles",
+			"permissive": "PERMISSIVE",
+			"policyname": "profiles_read",
+			"schemaname": "public",
+			"with_check": null
+		},
+		{
+			"cmd": "SELECT",
+			"qual": "(active OR is_admin())",
+			"roles": [
+				"public"
+			],
+			"tablename": "voucher_types",
+			"permissive": "PERMISSIVE",
+			"policyname": "types_read",
+			"schemaname": "public",
+			"with_check": null
+		},
+		{
+			"cmd": "SELECT",
+			"qual": "((user_id = auth.uid()) OR is_admin())",
+			"roles": [
+				"authenticated"
+			],
+			"tablename": "vouchers",
+			"permissive": "PERMISSIVE",
+			"policyname": "owner_read",
+			"schemaname": "public",
+			"with_check": null
+		}
+	],
+	"triggers": [
+		{
+			"name": "audit_mutation",
+			"table": "admin_notes",
+			"enabled": "O",
+			"definition": "CREATE TRIGGER audit_mutation AFTER INSERT OR DELETE OR UPDATE ON public.admin_notes FOR EACH ROW EXECUTE FUNCTION audit_change()"
+		},
+		{
+			"name": "applicant_notification_binding",
+			"table": "applicant_notification_links",
+			"enabled": "O",
+			"definition": "CREATE TRIGGER applicant_notification_binding BEFORE INSERT OR UPDATE ON public.applicant_notification_links FOR EACH ROW EXECUTE FUNCTION guard_applicant_notification_binding()"
+		},
+		{
+			"name": "applicant_session_bounds",
+			"table": "applicant_sessions",
+			"enabled": "O",
+			"definition": "CREATE TRIGGER applicant_session_bounds BEFORE UPDATE ON public.applicant_sessions FOR EACH ROW EXECUTE FUNCTION guard_applicant_session_bounds()"
+		},
+		{
+			"name": "preserve_applicant_owner",
+			"table": "applicants",
+			"enabled": "O",
+			"definition": "CREATE TRIGGER preserve_applicant_owner BEFORE UPDATE ON public.applicants FOR EACH ROW EXECUTE FUNCTION guard_applicant_owner_identity()"
+		},
+		{
+			"name": "preserve_applicant_owner",
+			"table": "application_documents",
+			"enabled": "O",
+			"definition": "CREATE TRIGGER preserve_applicant_owner BEFORE UPDATE ON public.application_documents FOR EACH ROW EXECUTE FUNCTION guard_applicant_owner_identity()"
+		},
+		{
+			"name": "principal_document_chain",
+			"table": "application_documents",
+			"enabled": "O",
+			"definition": "CREATE TRIGGER principal_document_chain BEFORE INSERT ON public.application_documents FOR EACH ROW EXECUTE FUNCTION guard_principal_business_chain()"
+		},
+		{
+			"name": "application_managed_boundary",
+			"table": "applications",
+			"enabled": "O",
+			"definition": "CREATE TRIGGER application_managed_boundary BEFORE INSERT OR UPDATE ON public.applications FOR EACH ROW EXECUTE FUNCTION guard_managed_application()"
+		},
+		{
+			"name": "preserve_applicant_owner",
+			"table": "applications",
+			"enabled": "O",
+			"definition": "CREATE TRIGGER preserve_applicant_owner BEFORE UPDATE ON public.applications FOR EACH ROW EXECUTE FUNCTION guard_applicant_owner_identity()"
+		},
+		{
+			"name": "principal_application_chain",
+			"table": "applications",
+			"enabled": "O",
+			"definition": "CREATE TRIGGER principal_application_chain BEFORE INSERT ON public.applications FOR EACH ROW EXECUTE FUNCTION guard_principal_business_chain()"
+		},
+		{
+			"name": "guest_checkout_binding",
+			"table": "guest_checkouts",
+			"enabled": "O",
+			"definition": "CREATE TRIGGER guest_checkout_binding BEFORE UPDATE ON public.guest_checkouts FOR EACH ROW EXECUTE FUNCTION guard_guest_checkout_binding()"
+		},
+		{
+			"name": "audit_mutation",
+			"table": "jobs",
+			"enabled": "O",
+			"definition": "CREATE TRIGGER audit_mutation AFTER INSERT OR DELETE OR UPDATE ON public.jobs FOR EACH ROW EXECUTE FUNCTION audit_change()"
+		},
+		{
+			"name": "preserve_applicant_owner",
+			"table": "notifications",
+			"enabled": "O",
+			"definition": "CREATE TRIGGER preserve_applicant_owner BEFORE UPDATE ON public.notifications FOR EACH ROW EXECUTE FUNCTION guard_applicant_owner_identity()"
+		},
+		{
+			"name": "voucher_application_notification",
+			"table": "notifications",
+			"enabled": "O",
+			"definition": "CREATE TRIGGER voucher_application_notification AFTER INSERT ON public.notifications FOR EACH ROW EXECUTE FUNCTION link_voucher_application_notification()"
+		},
+		{
+			"name": "immutable_payment_quote",
+			"table": "payment_quotes",
+			"enabled": "O",
+			"definition": "CREATE TRIGGER immutable_payment_quote BEFORE UPDATE ON public.payment_quotes FOR EACH ROW EXECUTE FUNCTION protect_payment_quote()"
+		},
+		{
+			"name": "immutable_payment_snapshot",
+			"table": "payments",
+			"enabled": "O",
+			"definition": "CREATE TRIGGER immutable_payment_snapshot BEFORE UPDATE ON public.payments FOR EACH ROW EXECUTE FUNCTION protect_payment_snapshot()"
+		},
+		{
+			"name": "audit_mutation",
+			"table": "platform_settings",
+			"enabled": "O",
+			"definition": "CREATE TRIGGER audit_mutation AFTER INSERT OR DELETE OR UPDATE ON public.platform_settings FOR EACH ROW EXECUTE FUNCTION audit_change()"
+		},
+		{
+			"name": "audit_mutation",
+			"table": "profiles",
+			"enabled": "O",
+			"definition": "CREATE TRIGGER audit_mutation AFTER INSERT OR DELETE OR UPDATE ON public.profiles FOR EACH ROW EXECUTE FUNCTION audit_change()"
+		},
+		{
+			"name": "voucher_access_binding",
+			"table": "voucher_access",
+			"enabled": "O",
+			"definition": "CREATE TRIGGER voucher_access_binding BEFORE INSERT OR UPDATE ON public.voucher_access FOR EACH ROW EXECUTE FUNCTION guard_voucher_access_binding()"
+		},
+		{
+			"name": "voucher_challenge_binding",
+			"table": "voucher_contact_challenges",
+			"enabled": "O",
+			"definition": "CREATE TRIGGER voucher_challenge_binding BEFORE UPDATE ON public.voucher_contact_challenges FOR EACH ROW EXECUTE FUNCTION guard_voucher_challenge_binding()"
+		},
+		{
+			"name": "voucher_contact_binding",
+			"table": "voucher_contacts",
+			"enabled": "O",
+			"definition": "CREATE TRIGGER voucher_contact_binding BEFORE UPDATE ON public.voucher_contacts FOR EACH ROW EXECUTE FUNCTION guard_voucher_contact_binding()"
+		},
+		{
+			"name": "credential_delivery_binding",
+			"table": "voucher_credential_deliveries",
+			"enabled": "O",
+			"definition": "CREATE TRIGGER credential_delivery_binding BEFORE INSERT OR UPDATE ON public.voucher_credential_deliveries FOR EACH ROW EXECUTE FUNCTION guard_credential_delivery_binding()"
+		},
+		{
+			"name": "audit_mutation",
+			"table": "vouchers",
+			"enabled": "O",
+			"definition": "CREATE TRIGGER audit_mutation AFTER INSERT OR DELETE OR UPDATE ON public.vouchers FOR EACH ROW EXECUTE FUNCTION audit_change()"
+		},
+		{
+			"name": "preserve_applicant_owner",
+			"table": "vouchers",
+			"enabled": "O",
+			"definition": "CREATE TRIGGER preserve_applicant_owner BEFORE UPDATE ON public.vouchers FOR EACH ROW EXECUTE FUNCTION guard_applicant_owner_identity()"
+		},
+		{
+			"name": "principal_voucher_chain",
+			"table": "vouchers",
+			"enabled": "O",
+			"definition": "CREATE TRIGGER principal_voucher_chain BEFORE INSERT ON public.vouchers FOR EACH ROW EXECUTE FUNCTION guard_principal_business_chain()"
+		}
+	],
+	"functions": [
+		{
+			"owner": "postgres",
+			"config": [
+				"search_path=\"\""
+			],
+			"exists": true,
+			"signature": "public.authorize_portal_document(text,uuid,uuid)",
+			"definition": "CREATE OR REPLACE FUNCTION public.authorize_portal_document(p_token_hash text, p_application_id uuid, p_document_id uuid)\n RETURNS jsonb\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO ''\nAS $function$\r\ndeclare s record; result jsonb;\r\nbegin\r\n  select * into s from public.lock_voucher_portal_scope(p_token_hash);\r\n  if p_application_id is distinct from s.application_id then raise exception 'Application unavailable'; end if;\r\n  select jsonb_build_object('storage_path',d.storage_path,'name',d.name,'mime_type',d.mime_type) into result\r\n    from public.application_documents d where d.id=p_document_id and d.application_id=s.application_id and d.user_id is not distinct from s.legacy_user_id and d.applicant_id is not distinct from (case when s.legacy_user_id is null then s.principal_id else null end);\r\n  if result is null then raise exception 'Document unavailable'; end if;\r\n  return result;\r\nend; $function$\n",
+			"anon_execute": false,
+			"public_execute": false,
+			"service_execute": true,
+			"security_definer": true,
+			"service_callable": true,
+			"authenticated_execute": false
+		},
+		{
+			"owner": "postgres",
+			"config": [
+				"search_path=\"\""
+			],
+			"exists": true,
+			"signature": "public.begin_guest_checkout(text,text,text,text)",
+			"definition": "CREATE OR REPLACE FUNCTION public.begin_guest_checkout(p_capability_hash text, p_email text, p_name text, p_country_code text)\n RETURNS uuid\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO ''\nAS $function$\r\ndeclare principal uuid; checkout uuid;\r\nbegin\r\n  if p_capability_hash is null or p_capability_hash !~ '^[a-f0-9]{64}$' or p_email is null or length(btrim(p_email)) not between 3 and 254\r\n    or p_email ~ '[[:space:]]' or p_name is null or length(btrim(p_name)) not between 1 and 200\r\n    or not exists(select 1 from public.pricing_countries where code=p_country_code and active) then raise exception 'Invalid checkout'; end if;\r\n  insert into public.applicant_principals(display_name) values(btrim(p_name)) returning id into principal;\r\n  insert into public.guest_checkouts(applicant_id,capability_hash,contact_email,contact_name,country_code,expires_at)\r\n    values(principal,p_capability_hash,lower(btrim(p_email)),btrim(p_name),p_country_code,now()+interval '24 hours') returning id into checkout;\r\n  return checkout;\r\nend; $function$\n",
+			"anon_execute": false,
+			"public_execute": false,
+			"service_execute": true,
+			"security_definer": true,
+			"service_callable": true,
+			"authenticated_execute": false
+		},
+		{
+			"owner": "postgres",
+			"config": [
+				"search_path=\"\""
+			],
+			"exists": true,
+			"signature": "public.claim_guest_voucher(text,text,text)",
+			"definition": "CREATE OR REPLACE FUNCTION public.claim_guest_voucher(p_capability_hash text, p_pin_hash text, p_token_hash text)\n RETURNS jsonb\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO ''\nAS $function$\r\ndeclare checkout public.guest_checkouts; payment public.payments; voucher public.vouchers;\r\n  access public.voucher_access; delivery public.voucher_credential_deliveries; session public.applicant_sessions; at_time timestamptz;\r\nbegin\r\n  if p_pin_hash is null or p_pin_hash !~ '^s1:[a-f0-9]{32}:[a-f0-9]{64}$' or p_token_hash is null or p_token_hash !~ '^[a-f0-9]{64}$' then raise exception 'Invalid credential material'; end if;\r\n  checkout:=public.lock_guest_checkout(p_capability_hash);\r\n  select * into payment from public.payments where guest_checkout_id=checkout.id for share;\r\n  if not found or payment.status<>'successful' or payment.paid_at is null then raise exception 'Verified purchase unavailable'; end if;\r\n  select * into voucher from public.vouchers where payment_id=payment.id and applicant_id=checkout.applicant_id for update;\r\n  if not found or voucher.status<>'unused' or voucher.expires_at<=clock_timestamp() then raise exception 'Voucher unavailable'; end if;\r\n  select * into access from public.voucher_access where voucher_id=voucher.id for update;\r\n  if not found or access.credential_state<>'pending_delivery' or access.revoked_at is not null or access.suspended_at is not null then raise exception 'Credentials already claimed or unavailable'; end if;\r\n  perform 1 from public.applicant_principals where id=access.applicant_id and disabled_at is null for share;\r\n  if not found then raise exception 'Access unavailable'; end if;\r\n  select * into delivery from public.voucher_credential_deliveries where voucher_access_id=access.id and guest_checkout_id=checkout.id and capability_hash=p_capability_hash for update;\r\n  if not found or delivery.consumed_at is not null or delivery.revoked_at is not null or delivery.expires_at<=clock_timestamp() then raise exception 'Credentials already claimed or unavailable'; end if;\r\n  at_time:=clock_timestamp();\r\n  update public.voucher_access set credential_state='current',pin_hash=p_pin_hash,credential_version=1,credential_rotated_at=at_time where id=access.id;\r\n  update public.voucher_credential_deliveries set consumed_at=at_time where id=delivery.id;\r\n  insert into public.applicant_sessions(voucher_access_id,token_hash,credential_version,created_at,last_seen_at,idle_expires_at,absolute_expires_at)\r\n    values(access.id,p_token_hash,1,at_time,at_time,at_time+interval '168 hours',at_time+interval '720 hours') returning * into session;\r\n  insert into public.audit_logs(actor_applicant_id,action,target_type,target_id) values(access.applicant_id,'voucher_credentials_claimed','voucher_access',access.id::text);\r\n  return jsonb_build_object('serial',voucher.serial,'idle_expires_at',session.idle_expires_at,'absolute_expires_at',session.absolute_expires_at);\r\nend; $function$\n",
+			"anon_execute": false,
+			"public_execute": false,
+			"service_execute": true,
+			"security_definer": true,
+			"service_callable": true,
+			"authenticated_execute": false
+		},
+		{
+			"owner": "postgres",
+			"config": [
+				"search_path=\"\""
+			],
+			"exists": true,
+			"signature": "public.create_guest_payment(text,uuid,text,uuid)",
+			"definition": "CREATE OR REPLACE FUNCTION public.create_guest_payment(p_capability_hash text, p_quote_id uuid, p_reference text, p_job_id uuid DEFAULT NULL::uuid)\n RETURNS jsonb\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO ''\nAS $function$\r\ndeclare checkout public.guest_checkouts; quote public.payment_quotes; payment public.payments;\r\nbegin\r\n  checkout := public.lock_guest_checkout(p_capability_hash);\r\n  select * into payment from public.payments where guest_checkout_id=checkout.id;\r\n  if found then\r\n    if payment.quote_id is distinct from p_quote_id or payment.job_id is distinct from p_job_id then raise exception 'Checkout already initialized'; end if;\r\n    return to_jsonb(payment);\r\n  end if;\r\n  select * into quote from public.payment_quotes where id=p_quote_id and applicant_id=checkout.applicant_id and guest_checkout_id=checkout.id for share;\r\n  if not found or quote.expires_at<=clock_timestamp() or not exists(select 1 from public.voucher_types where id=quote.voucher_type_id and active) then raise exception 'Quote unavailable'; end if;\r\n  if p_reference is null or p_reference !~ '^CA-[a-f0-9-]{36}$' then raise exception 'Invalid reference'; end if;\r\n  if p_job_id is not null and not exists(select 1 from public.jobs where id=p_job_id and status='published' and opportunity_type='managed' and not sample and (application_deadline is null or application_deadline>now())) then raise exception 'Opportunity unavailable'; end if;\r\n  insert into public.payments(applicant_id,guest_checkout_id,reference,voucher_type_id,job_id,amount,currency,validity_days,customer_email,\r\n    quote_id,product_name,country_code,region_code,price_source,display_amount,display_currency,display_minor_units,exchange_rate,exchange_rate_source,exchange_rate_as_of)\r\n  values(checkout.applicant_id,checkout.id,p_reference,quote.voucher_type_id,p_job_id,quote.charge_amount,quote.charge_currency,quote.validity_days,checkout.contact_email,\r\n    quote.id,quote.product_name,quote.country_code,quote.region_code,quote.price_source,quote.display_amount,quote.display_currency,quote.display_minor_units,quote.exchange_rate,quote.exchange_rate_source,quote.exchange_rate_as_of)\r\n  returning * into payment;\r\n  return to_jsonb(payment);\r\nend; $function$\n",
+			"anon_execute": false,
+			"public_execute": false,
+			"service_execute": true,
+			"security_definer": true,
+			"service_callable": true,
+			"authenticated_execute": false
+		},
+		{
+			"owner": "postgres",
+			"config": [
+				"search_path=\"\""
+			],
+			"exists": true,
+			"signature": "public.create_guest_quote(text,uuid)",
+			"definition": "CREATE OR REPLACE FUNCTION public.create_guest_quote(p_capability_hash text, p_type_id uuid)\n RETURNS jsonb\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO ''\nAS $function$\r\ndeclare\r\n  checkout public.guest_checkouts; p_country_code text; product public.voucher_types; country public.pricing_countries; region public.pricing_regions;\r\n  fx public.pricing_exchange_rates; quote public.payment_quotes;\r\n  charge integer; estimate bigint; display_code text := 'GHS'; decimals smallint := 2;\r\n  source text := 'base'; override_amount integer; expires timestamptz := now() + interval '15 minutes';\r\nbegin\r\n  checkout := public.lock_guest_checkout(p_capability_hash); p_country_code := checkout.country_code;\r\n  if exists(select 1 from public.payments where guest_checkout_id=checkout.id) then raise exception 'Checkout already initialized'; end if;\r\n  select * into product from public.voucher_types where id = p_type_id and active;\r\n  if not found or product.amount is null or product.currency <> 'GHS' then raise exception 'Voucher pricing unavailable'; end if;\r\n  select * into country from public.pricing_countries where code = p_country_code and active;\r\n  if not found then raise exception 'Country unavailable'; end if;\r\n  select * into region from public.pricing_regions where id = country.region_id and active;\r\n  charge := product.amount;\r\n  if region.id is not null then\r\n    select charge_amount into override_amount from public.voucher_price_overrides where voucher_type_id = product.id and region_id = region.id and active;\r\n    if found then charge := override_amount; source := 'region'; end if;\r\n  end if;\r\n  select charge_amount into override_amount from public.voucher_price_overrides where voucher_type_id = product.id and country_code = country.code and active;\r\n  if found then charge := override_amount; source := 'country'; end if;\r\n  estimate := charge;\r\n  if region.display_currency is not null and region.display_currency <> 'GHS' then\r\n    select * into fx from public.pricing_exchange_rates where quote_currency = region.display_currency and as_of <= now() and valid_until > now();\r\n    if found then\r\n      select minor_units into decimals from public.pricing_currencies where code = fx.quote_currency;\r\n      estimate := round(charge::numeric / 100 * fx.rate * power(10::numeric,decimals))::bigint;\r\n      if estimate > 0 and estimate <= 9007199254740991 then\r\n        display_code := fx.quote_currency; expires := least(expires,fx.valid_until);\r\n      else estimate := charge; decimals := 2; end if;\r\n    end if;\r\n  end if;\r\n  insert into public.payment_quotes(applicant_id,guest_checkout_id,voucher_type_id,product_name,validity_days,country_code,region_code,price_source,\r\n    charge_amount,charge_currency,display_amount,display_currency,display_minor_units,exchange_rate,exchange_rate_source,exchange_rate_as_of,expires_at)\r\n  values(checkout.applicant_id,checkout.id,product.id,product.name,product.validity_days,country.code,region.code,source,\r\n    charge,'GHS',estimate,display_code,decimals,\r\n    case when display_code <> 'GHS' then fx.rate else null end,\r\n    case when display_code <> 'GHS' then fx.source else null end,\r\n    case when display_code <> 'GHS' then fx.as_of else null end,expires)\r\n  returning * into quote;\r\n  return to_jsonb(quote);\r\nend; $function$\n",
+			"anon_execute": false,
+			"public_execute": false,
+			"service_execute": true,
+			"security_definer": true,
+			"service_callable": true,
+			"authenticated_execute": false
+		},
+		{
+			"owner": "postgres",
+			"config": [
+				"search_path=\"\""
+			],
+			"exists": true,
+			"signature": "public.fulfill_verified_payment(text,integer,text,text,text,text,text)",
+			"definition": "CREATE OR REPLACE FUNCTION public.fulfill_verified_payment(p_reference text, p_amount integer, p_currency text, p_email text, p_provider_id text, p_pin_hash text, p_pin_encrypted text)\n RETURNS uuid\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO ''\nAS $function$\r\ndeclare payment public.payments; voucher_id uuid; access_id uuid; checkout public.guest_checkouts; notice_id uuid;\r\nbegin\r\n  select * into payment from public.payments where reference = p_reference for update;\r\n  if not found then raise exception 'Payment not found'; end if;\r\n  if payment.provider <> 'paystack' or payment.amount is distinct from p_amount\r\n    or payment.currency is distinct from p_currency\r\n    or lower(payment.customer_email) is distinct from lower(p_email)\r\n    or coalesce(p_provider_id, '') = '' then raise exception 'Payment verification mismatch'; end if;\r\n  if payment.status = 'refunded' then raise exception 'Payment refunded'; end if;\r\n  select id into voucher_id from public.vouchers where payment_id = payment.id;\r\n  if found then\r\n    if payment.status <> 'successful' or payment.provider_id is distinct from p_provider_id then\r\n      raise exception 'Inconsistent payment state';\r\n    end if;\r\n    return voucher_id;\r\n  end if;\r\n  if payment.applicant_id is not null then\r\n    select * into checkout from public.guest_checkouts where id=payment.guest_checkout_id and applicant_id=payment.applicant_id;\r\n    if not found then raise exception 'Checkout owner mismatch'; end if;\r\n    if p_pin_hash is not null or p_pin_encrypted is not null then raise exception 'Guest credentials must be claimed separately'; end if;\r\n    update public.payments set status='successful',provider_id=p_provider_id,paid_at=now() where id=payment.id;\r\n    insert into public.vouchers(applicant_id,payment_id,voucher_type_id,job_id,expires_at)\r\n      values(payment.applicant_id,payment.id,payment.voucher_type_id,payment.job_id,now()+make_interval(days=>payment.validity_days)) returning id into voucher_id;\r\n    insert into public.voucher_access(voucher_id,applicant_id,credential_state) values(voucher_id,payment.applicant_id,'pending_delivery') returning id into access_id;\r\n    insert into public.voucher_contacts(voucher_access_id,email) values(access_id,checkout.contact_email);\r\n    insert into public.voucher_credential_deliveries(voucher_access_id,guest_checkout_id,capability_hash,expires_at)\r\n      values(access_id,checkout.id,checkout.capability_hash,greatest(checkout.expires_at,now()+interval '1 hour'));\r\n    insert into public.notifications(applicant_id,title,body,href) values(payment.applicant_id,'Voucher ready','Your verified voucher is ready. Claim your applicant access securely.','/applicant/payment') returning id into notice_id;\r\n    insert into public.applicant_notification_links(notification_id,voucher_access_id,payment_id) values(notice_id,access_id,payment.id);\r\n    return voucher_id;\r\n  end if;\r\n  if coalesce(p_pin_hash, '') = '' or coalesce(p_pin_encrypted, '') = '' then raise exception 'Missing voucher credentials'; end if;\r\n  update public.payments set status = 'successful', provider_id = p_provider_id, paid_at = now() where id = payment.id;\r\n  insert into public.vouchers(user_id, payment_id, voucher_type_id, job_id, pin_hash, pin_encrypted, expires_at)\r\n  values(payment.user_id, payment.id, payment.voucher_type_id, payment.job_id, p_pin_hash, p_pin_encrypted,\r\n    now() + make_interval(days => payment.validity_days)) returning id into voucher_id;\r\n  insert into public.notifications(user_id, title, body, href)\r\n  values(payment.user_id, 'Voucher ready', 'Your payment was verified and your voucher is ready.', '/dashboard/vouchers');\r\n  return voucher_id;\r\nend; $function$\n",
+			"anon_execute": false,
+			"public_execute": false,
+			"service_execute": true,
+			"security_definer": true,
+			"service_callable": true,
+			"authenticated_execute": false
+		},
+		{
+			"owner": "postgres",
+			"config": [
+				"search_path=\"\""
+			],
+			"exists": true,
+			"signature": "public.get_guest_checkout(text)",
+			"definition": "CREATE OR REPLACE FUNCTION public.get_guest_checkout(p_capability_hash text)\n RETURNS jsonb\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO ''\nAS $function$\r\ndeclare checkout public.guest_checkouts; result jsonb;\r\nbegin\r\n  checkout:=public.lock_guest_checkout(p_capability_hash);\r\n  select jsonb_build_object('reference',p.reference,'status',p.status,'charge_amount',p.amount,'charge_currency',p.currency,\r\n    'product_name',p.product_name,'paid_at',p.paid_at,'claim_available',a.credential_state='pending_delivery' and d.consumed_at is null and d.revoked_at is null and d.expires_at>now() and p.status='successful' and v.status='unused')\r\n  into result from public.payments p left join public.vouchers v on v.payment_id=p.id\r\n    left join public.voucher_access a on a.voucher_id=v.id left join public.voucher_credential_deliveries d on d.voucher_access_id=a.id\r\n    where p.guest_checkout_id=checkout.id;\r\n  return jsonb_build_object('checkout_id',checkout.id,'payment',result);\r\nend; $function$\n",
+			"anon_execute": false,
+			"public_execute": false,
+			"service_execute": true,
+			"security_definer": true,
+			"service_callable": true,
+			"authenticated_execute": false
+		},
+		{
+			"owner": "postgres",
+			"config": [
+				"search_path=\"\""
+			],
+			"exists": true,
+			"signature": "public.guard_principal_business_chain()",
+			"definition": "CREATE OR REPLACE FUNCTION public.guard_principal_business_chain()\n RETURNS trigger\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO ''\nAS $function$\r\nbegin\r\n  if new.applicant_id is null then return new; end if;\r\n  if tg_table_name='vouchers' then\r\n    if not exists(select 1 from public.payments p where p.id=new.payment_id and p.applicant_id=new.applicant_id and p.user_id is null and p.paid_at is not null and p.status in ('successful','refunded')) then raise exception 'Voucher owner mismatch'; end if;\r\n  elsif tg_table_name='applications' then\r\n    if not exists(select 1 from public.vouchers v where v.id=new.voucher_id and v.applicant_id=new.applicant_id and v.user_id is null) then raise exception 'Application owner mismatch'; end if;\r\n  elsif tg_table_name='application_documents' then\r\n    if not exists(select 1 from public.applications a where a.id=new.application_id and a.applicant_id=new.applicant_id and a.user_id is null) then raise exception 'Document owner mismatch'; end if;\r\n  end if;\r\n  return new;\r\nend; $function$\n",
+			"anon_execute": false,
+			"public_execute": false,
+			"service_execute": false,
+			"security_definer": true,
+			"service_callable": false,
+			"authenticated_execute": false
+		},
+		{
+			"owner": "postgres",
+			"config": [
+				"search_path=\"\""
+			],
+			"exists": true,
+			"signature": "public.load_voucher_portal(text,integer)",
+			"definition": "CREATE OR REPLACE FUNCTION public.load_voucher_portal(p_token_hash text, p_notifications_page integer DEFAULT 1)\n RETURNS jsonb\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO ''\nAS $function$\r\ndeclare s record; payload jsonb; application_payload jsonb;\r\nbegin\r\n  select * into s from public.lock_voucher_portal_scope(p_token_hash);\r\n  if p_notifications_page is null or p_notifications_page not between 1 and 10000 then raise exception 'Invalid page'; end if;\r\n  select jsonb_build_object(\r\n    'voucher',jsonb_build_object('id',v.id,'serial',v.serial,'status',v.status,'expires_at',v.expires_at,'job_id',v.job_id),\r\n    'payment',jsonb_build_object('id',p.id,'reference',p.reference,'status',p.status,'amount',p.amount,'currency',p.currency,'paid_at',p.paid_at,\r\n      'provider',p.provider,'provider_id',p.provider_id,'created_at',p.created_at,\r\n      'charge_amount',p.charge_amount,'charge_currency',p.charge_currency,'display_amount',p.display_amount,'display_currency',p.display_currency,\r\n      'country_code',p.country_code,'region_code',p.region_code,'price_source',p.price_source,'display_minor_units',p.display_minor_units,\r\n      'exchange_rate',p.exchange_rate,'exchange_rate_source',p.exchange_rate_source,'exchange_rate_as_of',p.exchange_rate_as_of),\r\n    'product',jsonb_build_object('name',coalesce(p.product_name,t.name),'validity_days',p.validity_days)\r\n  ) into payload from public.vouchers v join public.payments p on p.id=v.payment_id\r\n    join public.voucher_types t on t.id=v.voucher_type_id where v.id=s.voucher_id;\r\n  if s.application_id is not null then\r\n    select jsonb_build_object('id',a.id,'reference',a.reference,'status',a.status,'revision',a.revision,\r\n      'personal',a.personal,'identification',a.identification,'job_id',a.job_id,'updated_at',a.updated_at,'submitted_at',a.submitted_at,'declaration_at',a.declaration_at,\r\n      'opportunity_title_snapshot',a.opportunity_title_snapshot,'service_description_snapshot',a.service_description_snapshot,\r\n      'education',coalesce((select jsonb_agg(jsonb_build_object('institution',e.institution,'qualification',e.qualification,'field',e.field,'country',e.country,'start_date',e.start_date,'completion_date',e.completion_date) order by e.sort_order,e.id) from public.application_education e where e.application_id=a.id),'[]'::jsonb),\r\n      'experience',coalesce((select jsonb_agg(jsonb_build_object('employer',e.employer,'position',e.position,'location',e.location,'start_date',e.start_date,'end_date',e.end_date,'responsibilities',e.responsibilities) order by e.sort_order,e.id) from public.application_experience e where e.application_id=a.id),'[]'::jsonb),\r\n      'answers',coalesce((select jsonb_object_agg(x.question_id,x.answer) from public.application_answers x where x.application_id=a.id),'{}'::jsonb),\r\n      'documents',coalesce((select jsonb_agg(jsonb_build_object('id',d.id,'kind',d.kind,'name',d.name,'size_bytes',d.size_bytes) order by d.created_at,d.id) from public.application_documents d where d.application_id=a.id and d.user_id is not distinct from s.legacy_user_id and d.applicant_id is not distinct from a.applicant_id),'[]'::jsonb),\r\n      'history',coalesce((select jsonb_agg(jsonb_build_object('status',h.status,'message',h.message,'created_at',h.created_at) order by h.created_at,h.id) from public.application_status_history h where h.application_id=a.id),'[]'::jsonb),\r\n      'job',jsonb_build_object('title',j.title,'company',j.company,'service_description',j.service_description,'questions',j.questions,'minimum_age',j.minimum_age,'required_documents',j.required_documents,'status',j.status,'application_deadline',j.application_deadline)\r\n    ) into application_payload from public.applications a join public.jobs j on j.id=a.job_id\r\n      where a.id=s.application_id and a.voucher_id=s.voucher_id and a.user_id is not distinct from s.legacy_user_id;\r\n    if application_payload is null then raise exception 'Application unavailable'; end if;\r\n  end if;\r\n  return payload || jsonb_build_object('application',application_payload,\r\n    'notifications',coalesce((select jsonb_agg(to_jsonb(n) order by n.created_at desc,n.id desc) from (\r\n      select x.id,x.title,x.body,x.read_at,x.created_at,l.application_id from public.notifications x\r\n      join public.applicant_notification_links l on l.notification_id=x.id\r\n      where l.voucher_access_id=s.access_id order by x.created_at desc,x.id desc\r\n      limit 20 offset (p_notifications_page-1)*20) n),'[]'::jsonb),\r\n    'unread_count',(select count(*) from public.notifications n join public.applicant_notification_links l on l.notification_id=n.id where l.voucher_access_id=s.access_id and n.read_at is null));\r\nend; $function$\n",
+			"anon_execute": false,
+			"public_execute": false,
+			"service_execute": true,
+			"security_definer": true,
+			"service_callable": true,
+			"authenticated_execute": false
+		},
+		{
+			"owner": "postgres",
+			"config": [
+				"search_path=\"\""
+			],
+			"exists": true,
+			"signature": "public.lock_guest_checkout(text)",
+			"definition": "CREATE OR REPLACE FUNCTION public.lock_guest_checkout(p_capability_hash text)\n RETURNS guest_checkouts\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO ''\nAS $function$\r\ndeclare checkout public.guest_checkouts;\r\nbegin\r\n  if p_capability_hash is null or p_capability_hash !~ '^[a-f0-9]{64}$' then raise exception 'Checkout unavailable' using errcode='28000'; end if;\r\n  select * into checkout from public.guest_checkouts where capability_hash=p_capability_hash for no key update;\r\n  if not found or checkout.revoked_at is not null or checkout.expires_at<=clock_timestamp() then raise exception 'Checkout unavailable' using errcode='28000'; end if;\r\n  perform 1 from public.applicant_principals where id=checkout.applicant_id and disabled_at is null for share;\r\n  if not found then raise exception 'Checkout unavailable' using errcode='28000'; end if;\r\n  return checkout;\r\nend; $function$\n",
+			"anon_execute": false,
+			"public_execute": false,
+			"service_execute": false,
+			"security_definer": true,
+			"service_callable": false,
+			"authenticated_execute": false
+		},
+		{
+			"owner": "postgres",
+			"config": [
+				"search_path=\"\""
+			],
+			"exists": true,
+			"signature": "public.lock_voucher_portal_scope(text,boolean)",
+			"definition": "CREATE OR REPLACE FUNCTION public.lock_voucher_portal_scope(p_token_hash text, p_application_write boolean DEFAULT false)\n RETURNS TABLE(access_id uuid, principal_id uuid, voucher_id uuid, payment_id uuid, application_id uuid, legacy_user_id uuid)\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO ''\nAS $function$\r\ndeclare candidate uuid; candidate_payment uuid; v public.vouchers; s record; p public.payments;\r\nbegin\r\n  if p_token_hash is null or p_token_hash !~ '^[a-f0-9]{64}$' then\r\n    raise exception 'Applicant session unavailable' using errcode = '28000'; end if;\r\n  select a.voucher_id,voucher.payment_id into candidate,candidate_payment from public.applicant_sessions x\r\n    join public.voucher_access a on a.id=x.voucher_access_id\r\n    join public.vouchers voucher on voucher.id=a.voucher_id where x.token_hash=p_token_hash;\r\n  if not found then raise exception 'Applicant session unavailable' using errcode='28000'; end if;\r\n  -- Payment first matches fulfillment; SHARE prevents a refund racing a write.\r\n  -- Then voucher -> access -> principal -> session, matching login/redemption.\r\n  select * into p from public.payments where id=candidate_payment for share;\r\n  select * into v from public.vouchers where id=candidate for update;\r\n  select * into s from public.resolve_voucher_session(p_token_hash);\r\n  if not found or s.voucher_id is distinct from v.id then\r\n    raise exception 'Applicant session unavailable' using errcode='28000'; end if;\r\n  if p.id is null or p.id is distinct from v.payment_id\r\n    or p.user_id is distinct from v.user_id or p.applicant_id is distinct from v.applicant_id then\r\n    raise exception 'Applicant scope unavailable'; end if;\r\n  if v.applicant_id is not null and v.applicant_id is distinct from s.applicant_id then raise exception 'Applicant scope unavailable'; end if;\r\n  if s.application_id is not null and not exists(\r\n    select 1 from public.applications a where a.id=s.application_id and a.voucher_id=v.id\r\n      and a.user_id is not distinct from v.user_id and a.applicant_id is not distinct from v.applicant_id\r\n  ) then raise exception 'Applicant scope unavailable'; end if;\r\n  if p_application_write and (s.application_id is null or v.status <> 'used' or p.status <> 'successful') then\r\n    raise exception 'Application is read only'; end if;\r\n  return query select s.voucher_access_id,s.applicant_id,v.id,v.payment_id,s.application_id,v.user_id;\r\nend; $function$\n",
+			"anon_execute": false,
+			"public_execute": false,
+			"service_execute": false,
+			"security_definer": true,
+			"service_callable": false,
+			"authenticated_execute": false
+		},
+		{
+			"owner": "postgres",
+			"config": [
+				"search_path=\"\""
+			],
+			"exists": true,
+			"signature": "public.portal_upload_context(text,uuid,integer,uuid)",
+			"definition": "CREATE OR REPLACE FUNCTION public.portal_upload_context(p_token_hash text, p_application_id uuid, p_revision integer, p_document_id uuid)\n RETURNS text\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO ''\nAS $function$\r\ndeclare s record; a public.applications;\r\nbegin\r\n  select * into s from public.lock_voucher_portal_scope(p_token_hash,true);\r\n  if p_application_id is distinct from s.application_id or p_document_id is null then raise exception 'Application unavailable'; end if;\r\n  select * into a from public.applications where id=s.application_id for update;\r\n  if a.status <> 'draft' then raise exception 'Application is read only'; end if;\r\n  if p_revision is distinct from a.revision then raise exception 'Revision conflict'; end if;\r\n  return coalesce(s.legacy_user_id,s.principal_id)::text || '/' || s.application_id::text || '/' || p_document_id::text;\r\nend; $function$\n",
+			"anon_execute": false,
+			"public_execute": false,
+			"service_execute": true,
+			"security_definer": true,
+			"service_callable": true,
+			"authenticated_execute": false
+		},
+		{
+			"owner": "postgres",
+			"config": [
+				"search_path=\"\""
+			],
+			"exists": true,
+			"signature": "public.redeem_portal_voucher(text,uuid)",
+			"definition": "CREATE OR REPLACE FUNCTION public.redeem_portal_voucher(p_token_hash text, p_job_id uuid)\n RETURNS uuid\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO ''\nAS $function$\r\ndeclare s record; v public.vouchers; result uuid;\r\nbegin\r\n  select * into s from public.lock_voucher_portal_scope(p_token_hash);\r\n  if s.application_id is not null then\r\n    if exists(select 1 from public.applications where id=s.application_id and job_id=p_job_id) then return s.application_id; end if;\r\n    raise exception 'Application unavailable';\r\n  end if;\r\n  if not exists(select 1 from public.payments where id=s.payment_id and status='successful') then raise exception 'Voucher unavailable'; end if;\r\n  select * into v from public.vouchers where id=s.voucher_id;\r\n  if s.legacy_user_id is not null then\r\n    result := public.redeem_verified_voucher(s.legacy_user_id,v.serial,v.pin_hash,p_job_id);\r\n  else\r\n    if v.status<>'unused' or v.expires_at<=clock_timestamp() or (v.job_id is not null and v.job_id<>p_job_id) then raise exception 'Voucher unavailable'; end if;\r\n    perform 1 from public.jobs where id=p_job_id and status='published' and opportunity_type='managed' and not sample and (application_deadline is null or application_deadline>now()) for share;\r\n    if not found then raise exception 'Opportunity unavailable'; end if;\r\n    insert into public.applications(applicant_id,job_id,voucher_id) values(s.principal_id,p_job_id,v.id) returning id into result;\r\n    update public.vouchers set status='used',activated_at=now(),job_id=p_job_id where id=v.id;\r\n    insert into public.application_status_history(application_id,status,message,actor_applicant_id) values(result,'draft','Application started with a verified voucher.',s.principal_id);\r\n    insert into public.notifications(applicant_id,title,body,href) values(s.principal_id,'Application started','Your application draft is ready to complete.','/dashboard/applications/'||result::text);\r\n  end if;\r\n  insert into public.audit_logs(actor_applicant_id,action,target_type,target_id)\r\n    values(s.principal_id,'voucher_application_started','applications',result::text);\r\n  return result;\r\nend; $function$\n",
+			"anon_execute": false,
+			"public_execute": false,
+			"service_execute": true,
+			"security_definer": true,
+			"service_callable": true,
+			"authenticated_execute": false
+		},
+		{
+			"owner": "postgres",
+			"config": [
+				"search_path=\"\""
+			],
+			"exists": true,
+			"signature": "public.register_application_document_principal(uuid,uuid,integer,uuid,text,text,text,text,integer)",
+			"definition": "CREATE OR REPLACE FUNCTION public.register_application_document_principal(p_applicant_id uuid, p_application_id uuid, p_revision integer, p_id uuid, p_kind text, p_name text, p_path text, p_mime text, p_size integer)\n RETURNS jsonb\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO ''\nAS $function$\r\ndeclare a public.applications;\r\nbegin\r\n  select * into a from public.applications where id = p_application_id and applicant_id = p_applicant_id for update;\r\n  if not found then raise exception 'Application unavailable'; end if;\r\n  if a.status <> 'draft' then raise exception 'Application is read only'; end if;\r\n  if p_revision is distinct from a.revision then raise exception 'Revision conflict'; end if;\r\n  if p_kind is null or p_kind not in ('cv','passport','certificate','photo','supporting')\r\n    or coalesce(length(p_name),0) not between 1 and 200\r\n    or p_path is distinct from (p_applicant_id::text || '/' || a.id::text || '/' || p_id::text)\r\n    then raise exception 'Invalid document'; end if;\r\n  if (select count(*) from public.application_documents where application_id = a.id) >= 20 then\r\n    raise exception 'Document limit reached'; end if;\r\n  if not exists(select 1 from storage.objects where bucket_id = 'application-documents' and name = p_path)\r\n    then raise exception 'Uploaded object missing'; end if;\r\n  insert into public.application_documents(id,application_id,applicant_id,kind,name,storage_path,mime_type,size_bytes)\r\n    values(p_id,a.id,p_applicant_id,p_kind,p_name,p_path,p_mime,p_size);\r\n  update public.applications set revision = revision + 1, updated_at = clock_timestamp() where id = a.id returning * into a;\r\n  return jsonb_build_object('revision',a.revision,'updatedAt',a.updated_at,'documentId',p_id);\r\nend; $function$\n",
+			"anon_execute": false,
+			"public_execute": false,
+			"service_execute": false,
+			"security_definer": true,
+			"service_callable": false,
+			"authenticated_execute": false
+		},
+		{
+			"owner": "postgres",
+			"config": [
+				"search_path=\"\""
+			],
+			"exists": true,
+			"signature": "public.register_portal_document(text,uuid,integer,uuid,text,text,text,integer)",
+			"definition": "CREATE OR REPLACE FUNCTION public.register_portal_document(p_token_hash text, p_application_id uuid, p_revision integer, p_document_id uuid, p_kind text, p_name text, p_mime text, p_size integer)\n RETURNS jsonb\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO ''\nAS $function$\r\ndeclare s record; path text; result jsonb;\r\nbegin\r\n  select * into s from public.lock_voucher_portal_scope(p_token_hash,true);\r\n  if p_application_id is distinct from s.application_id then raise exception 'Application unavailable'; end if;\r\n  if p_mime is null or p_mime not in ('application/pdf','image/png','image/jpeg') or p_size is null or p_size not between 1 and 10485760 then raise exception 'Invalid document'; end if;\r\n  path := public.portal_upload_context(p_token_hash,p_application_id,p_revision,p_document_id);\r\n  if s.legacy_user_id is null then\r\n  result := public.register_application_document_principal(s.principal_id,s.application_id,p_revision,p_document_id,p_kind,p_name,path,p_mime,p_size);\r\n  else\r\n  result := public.register_application_document(s.legacy_user_id,s.application_id,p_revision,p_document_id,p_kind,p_name,path,p_mime,p_size);\r\n  end if;\r\n  insert into public.audit_logs(actor_applicant_id,action,target_type,target_id)\r\n    values(s.principal_id,'voucher_document_added','application_documents',p_document_id::text);\r\n  return result;\r\nend; $function$\n",
+			"anon_execute": false,
+			"public_execute": false,
+			"service_execute": true,
+			"security_definer": true,
+			"service_callable": true,
+			"authenticated_execute": false
+		},
+		{
+			"owner": "postgres",
+			"config": [
+				"search_path=\"\""
+			],
+			"exists": true,
+			"signature": "public.remove_application_document_principal(uuid,uuid,integer,uuid)",
+			"definition": "CREATE OR REPLACE FUNCTION public.remove_application_document_principal(p_applicant_id uuid, p_application_id uuid, p_revision integer, p_document_id uuid)\n RETURNS jsonb\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO ''\nAS $function$\r\ndeclare a public.applications; path text;\r\nbegin\r\n  select * into a from public.applications where id = p_application_id and applicant_id = p_applicant_id for update;\r\n  if not found then raise exception 'Application unavailable'; end if;\r\n  if a.status <> 'draft' then raise exception 'Application is read only'; end if;\r\n  if p_revision is distinct from a.revision then raise exception 'Revision conflict'; end if;\r\n  delete from public.application_documents where id = p_document_id and application_id = a.id and applicant_id = p_applicant_id\r\n    returning storage_path into path;\r\n  if not found then raise exception 'Document unavailable'; end if;\r\n  update public.applications set revision = revision + 1, updated_at = clock_timestamp() where id = a.id returning * into a;\r\n  return jsonb_build_object('revision',a.revision,'updatedAt',a.updated_at,'storagePath',path);\r\nend; $function$\n",
+			"anon_execute": false,
+			"public_execute": false,
+			"service_execute": false,
+			"security_definer": true,
+			"service_callable": false,
+			"authenticated_execute": false
+		},
+		{
+			"owner": "postgres",
+			"config": [
+				"search_path=\"\""
+			],
+			"exists": true,
+			"signature": "public.remove_portal_document(text,uuid,integer,uuid)",
+			"definition": "CREATE OR REPLACE FUNCTION public.remove_portal_document(p_token_hash text, p_application_id uuid, p_revision integer, p_document_id uuid)\n RETURNS jsonb\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO ''\nAS $function$\r\ndeclare s record; result jsonb;\r\nbegin\r\n  select * into s from public.lock_voucher_portal_scope(p_token_hash,true);\r\n  if p_application_id is distinct from s.application_id then raise exception 'Application unavailable'; end if;\r\n  if s.legacy_user_id is null then\r\n  result := public.remove_application_document_principal(s.principal_id,s.application_id,p_revision,p_document_id);\r\n  else\r\n  result := public.remove_application_document(s.legacy_user_id,s.application_id,p_revision,p_document_id);\r\n  end if;\r\n  insert into public.audit_logs(actor_applicant_id,action,target_type,target_id)\r\n    values(s.principal_id,'voucher_document_removed','application_documents',p_document_id::text);\r\n  return result;\r\nend; $function$\n",
+			"anon_execute": false,
+			"public_execute": false,
+			"service_execute": true,
+			"security_definer": true,
+			"service_callable": true,
+			"authenticated_execute": false
+		},
+		{
+			"owner": "postgres",
+			"config": [
+				"search_path=\"\""
+			],
+			"exists": true,
+			"signature": "public.review_application(uuid,uuid,uuid,integer,public.application_status,text)",
+			"definition": "CREATE OR REPLACE FUNCTION public.review_application(p_request_id uuid, p_actor_id uuid, p_application_id uuid, p_revision integer, p_status application_status, p_message text)\n RETURNS jsonb\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO ''\nAS $function$\r\ndeclare\r\n  application public.applications;\r\n  previous public.application_review_commands;\r\n  staff_role public.app_role;\r\n  allowed boolean;\r\n  next_revision integer;\r\nbegin\r\n  if p_request_id is null or p_actor_id is null or p_application_id is null\r\n    or p_revision is null or p_revision < 0 or p_status is null\r\n    or p_message is null or length(btrim(p_message)) not between 10 and 2000 then\r\n    raise exception 'Invalid review parameters';\r\n  end if;\r\n  -- Lock the role so revocation cannot race an authorized decision.\r\n  select role into staff_role from public.profiles where id = p_actor_id for share;\r\n  if not found or staff_role not in ('admin','super_admin') then\r\n    raise exception 'Administrator required';\r\n  end if;\r\n  select * into application from public.applications where id = p_application_id for update;\r\n  if not found then raise exception 'Application not found'; end if;\r\n\r\n  select * into previous from public.application_review_commands where request_id = p_request_id;\r\n  if found then\r\n    if previous.application_id is distinct from p_application_id\r\n      or previous.actor_id is distinct from p_actor_id\r\n      or previous.expected_revision is distinct from p_revision\r\n      or previous.next_status is distinct from p_status\r\n      or previous.applicant_message is distinct from btrim(p_message) then\r\n      raise exception 'Review request conflict';\r\n    end if;\r\n    return jsonb_build_object('reference',application.reference,\r\n      'status',previous.next_status,'revision',previous.result_revision,'replayed',true);\r\n  end if;\r\n  if application.submitted_at is null or application.status = 'draft' then\r\n    raise exception 'Only submitted applications can be reviewed';\r\n  end if;\r\n  if application.revision <> p_revision then raise exception 'Revision conflict'; end if;\r\n\r\n  -- Internal screening only. Applicant-driven withdrawal requires a separate\r\n  -- protected operation; this RPC cannot withdraw or reopen terminal states.\r\n  allowed := case application.status\r\n    when 'submitted' then p_status in ('under_review')\r\n    when 'under_review' then p_status in ('additional_information_required','shortlisted','unsuccessful')\r\n    when 'additional_information_required' then p_status in ('under_review')\r\n    when 'shortlisted' then p_status in ('interview','final_review','unsuccessful')\r\n    when 'interview' then p_status in ('final_review','unsuccessful')\r\n    when 'final_review' then p_status in ('accepted','unsuccessful','additional_information_required')\r\n    else false\r\n  end;\r\n  if not allowed then raise exception 'Review transition not permitted'; end if;\r\n  next_revision := application.revision + 1;\r\n  -- Reserve the retry key in the same transaction. A cross-application key\r\n  -- collision rolls back the entire operation rather than creating duplicates.\r\n  insert into public.application_review_commands(\r\n    request_id,application_id,actor_id,expected_revision,next_status,applicant_message,result_revision\r\n  ) values(p_request_id,p_application_id,p_actor_id,p_revision,p_status,btrim(p_message),next_revision);\r\n  update public.applications set status = p_status,revision = next_revision,updated_at = clock_timestamp() where id = p_application_id;\r\n  insert into public.application_status_history(application_id,status,message,actor_id)\r\n    values(p_application_id,p_status,btrim(p_message),p_actor_id);\r\n  insert into public.notifications(user_id,applicant_id,title,body,href)\r\n    values(application.user_id,application.applicant_id,'Application update',\r\n      application.reference || ': ' || case when p_status = 'accepted'\r\n        then 'Accepted/qualified through CruiseApply internal screening. This is not hiring, employment or selection by a cruise company and does not guarantee employer referral.'\r\n        else replace(p_status::text,'_',' ') || '. Open your application to read the screening update.' end,\r\n      '/dashboard/applications/' || p_application_id::text);\r\n  insert into public.audit_logs(actor_id,action,target_type,target_id,metadata)\r\n    values(p_actor_id,'application_reviewed','applications',p_application_id::text,\r\n      jsonb_build_object('request_id',p_request_id,'from_status',application.status,\r\n        'to_status',p_status,'from_revision',p_revision,'to_revision',next_revision));\r\n  return jsonb_build_object('reference',application.reference,'status',p_status,\r\n    'revision',next_revision,'replayed',false);\r\nend; $function$\n",
+			"anon_execute": false,
+			"public_execute": false,
+			"service_execute": true,
+			"security_definer": true,
+			"service_callable": true,
+			"authenticated_execute": false
+		},
+		{
+			"owner": "postgres",
+			"config": [
+				"search_path=\"\""
+			],
+			"exists": true,
+			"signature": "public.save_application_draft_principal(uuid,uuid,integer,jsonb)",
+			"definition": "CREATE OR REPLACE FUNCTION public.save_application_draft_principal(p_applicant_id uuid, p_application_id uuid, p_revision integer, p_data jsonb)\n RETURNS jsonb\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO ''\nAS $function$\r\ndeclare a public.applications; item jsonb; ordinal integer;\r\nbegin\r\n  select * into a from public.applications where id = p_application_id and applicant_id = p_applicant_id for update;\r\n  if not found then raise exception 'Application unavailable'; end if;\r\n  if a.status <> 'draft' then raise exception 'Application is read only'; end if;\r\n  if p_revision is distinct from a.revision then raise exception 'Revision conflict'; end if;\r\n  if jsonb_typeof(p_data) is distinct from 'object'\r\n    or jsonb_typeof(p_data->'personal') is distinct from 'object'\r\n    or jsonb_typeof(p_data->'identification') is distinct from 'object'\r\n    or jsonb_typeof(p_data->'education') is distinct from 'array'\r\n    or jsonb_typeof(p_data->'experience') is distinct from 'array'\r\n    or jsonb_typeof(p_data->'answers') is distinct from 'object'\r\n    or octet_length(p_data::text) > 65536 then raise exception 'Invalid draft'; end if;\r\n  if jsonb_array_length(p_data->'education') > 20 or jsonb_array_length(p_data->'experience') > 30 then\r\n    raise exception 'Too many records'; end if;\r\n  update public.applications set personal = p_data->'personal', identification = p_data->'identification',\r\n    revision = revision + 1, updated_at = clock_timestamp() where id = a.id returning * into a;\r\n  delete from public.application_education where application_id = a.id;\r\n  ordinal := 0;\r\n  for item in select value from jsonb_array_elements(p_data->'education') loop\r\n    insert into public.application_education(application_id,institution,qualification,field,country,start_date,completion_date,sort_order)\r\n    values(a.id,item->>'institution',item->>'qualification',item->>'field',item->>'country',\r\n      nullif(item->>'start_date','')::date,nullif(item->>'completion_date','')::date,ordinal);\r\n    ordinal := ordinal + 1;\r\n  end loop;\r\n  delete from public.application_experience where application_id = a.id;\r\n  ordinal := 0;\r\n  for item in select value from jsonb_array_elements(p_data->'experience') loop\r\n    insert into public.application_experience(application_id,employer,position,location,start_date,end_date,responsibilities,sort_order)\r\n    values(a.id,item->>'employer',item->>'position',item->>'location',nullif(item->>'start_date','')::date,\r\n      nullif(item->>'end_date','')::date,item->>'responsibilities',ordinal);\r\n    ordinal := ordinal + 1;\r\n  end loop;\r\n  delete from public.application_answers where application_id = a.id;\r\n  insert into public.application_answers(application_id,question_id,answer)\r\n    select a.id,key,value from jsonb_each_text(p_data->'answers');\r\n  return jsonb_build_object('revision',a.revision,'updatedAt',a.updated_at);\r\nend; $function$\n",
+			"anon_execute": false,
+			"public_execute": false,
+			"service_execute": false,
+			"security_definer": true,
+			"service_callable": false,
+			"authenticated_execute": false
+		},
+		{
+			"owner": "postgres",
+			"config": [
+				"search_path=\"\""
+			],
+			"exists": true,
+			"signature": "public.save_portal_application(text,uuid,integer,jsonb)",
+			"definition": "CREATE OR REPLACE FUNCTION public.save_portal_application(p_token_hash text, p_application_id uuid, p_revision integer, p_data jsonb)\n RETURNS jsonb\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO ''\nAS $function$\r\ndeclare s record; result jsonb;\r\nbegin\r\n  select * into s from public.lock_voucher_portal_scope(p_token_hash,true);\r\n  if p_application_id is distinct from s.application_id then raise exception 'Application unavailable'; end if;\r\n  if s.legacy_user_id is null then\r\n  result := public.save_application_draft_principal(s.principal_id,s.application_id,p_revision,p_data);\r\n  else\r\n  result := public.save_application_draft(s.legacy_user_id,s.application_id,p_revision,p_data);\r\n  end if;\r\n  insert into public.audit_logs(actor_applicant_id,action,target_type,target_id)\r\n    values(s.principal_id,'voucher_application_saved','applications',s.application_id::text);\r\n  return result;\r\nend; $function$\n",
+			"anon_execute": false,
+			"public_execute": false,
+			"service_execute": true,
+			"security_definer": true,
+			"service_callable": true,
+			"authenticated_execute": false
+		},
+		{
+			"owner": "postgres",
+			"config": [
+				"search_path=\"\""
+			],
+			"exists": true,
+			"signature": "public.submit_application_principal(uuid,uuid,integer,boolean)",
+			"definition": "CREATE OR REPLACE FUNCTION public.submit_application_principal(p_applicant_id uuid, p_application_id uuid, p_revision integer, p_declaration boolean)\n RETURNS jsonb\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO ''\nAS $function$\r\ndeclare a public.applications; j public.jobs; q jsonb; k text; dob date;\r\nbegin\r\n  select * into a from public.applications where id = p_application_id and applicant_id = p_applicant_id for update;\r\n  if not found then raise exception 'Application unavailable'; end if;\r\n  if p_declaration is distinct from true then raise exception 'Declaration required'; end if;\r\n  if a.submitted_at is not null then\r\n    return jsonb_build_object('reference',a.reference,'submittedAt',a.submitted_at); end if;\r\n  if a.status <> 'draft' then raise exception 'Application is read only'; end if;\r\n  if p_revision is distinct from a.revision then raise exception 'Revision conflict'; end if;\r\n  select * into j from public.jobs where id = a.job_id for share;\r\n  if not found or j.status <> 'published' or j.sample or j.application_deadline <= now()\r\n    then raise exception 'Vacancy is no longer open'; end if;\r\n  if not exists(select 1 from public.vouchers v where v.id = a.voucher_id and v.applicant_id = p_applicant_id\r\n    and v.job_id = a.job_id and v.status = 'used') then raise exception 'Voucher unavailable'; end if;\r\n  foreach k in array array['first_name','surname','date_of_birth','nationality','country_of_residence','email','phone','address'] loop\r\n    if coalesce(length(btrim(a.personal->>k)),0) = 0 then raise exception 'Complete personal information'; end if;\r\n  end loop;\r\n  dob := (a.personal->>'date_of_birth')::date;\r\n  if dob >= current_date or (j.minimum_age is not null and dob > (current_date - make_interval(years => j.minimum_age))::date)\r\n    then raise exception 'Date of birth does not meet vacancy requirements'; end if;\r\n  if jsonb_typeof(j.questions) is distinct from 'array' then raise exception 'Invalid vacancy question configuration'; end if;\r\n  for q in select value from jsonb_array_elements(j.questions) loop\r\n    if coalesce((q->>'required')::boolean,false) and not exists(\r\n      select 1 from public.application_answers where application_id = a.id and question_id = q->>'id' and length(btrim(answer)) > 0)\r\n      then raise exception 'Answer required vacancy questions'; end if;\r\n  end loop;\r\n  foreach k in array j.required_documents loop\r\n    if not exists(select 1 from public.application_documents where application_id = a.id and kind = k)\r\n      then raise exception 'Upload required documents'; end if;\r\n  end loop;\r\n  update public.applications set status = 'submitted', declaration_at = now(), submitted_at = now(),\r\n    revision = revision + 1, updated_at = clock_timestamp() where id = a.id returning * into a;\r\n  insert into public.application_status_history(application_id,status,message,actor_applicant_id)\r\n    values(a.id,'submitted','Application submitted with applicant declaration.',p_applicant_id);\r\n  insert into public.notifications(applicant_id,title,body,href)\r\n    values(p_applicant_id,'Application submitted','Your application ' || a.reference || ' has been received.','/dashboard/applications/' || a.id::text);\r\n  insert into public.audit_logs(actor_applicant_id,action,target_type,target_id)\r\n    values(p_applicant_id,'application_submitted','applications',a.id::text);\r\n  return jsonb_build_object('reference',a.reference,'submittedAt',a.submitted_at);\r\nend; $function$\n",
+			"anon_execute": false,
+			"public_execute": false,
+			"service_execute": false,
+			"security_definer": true,
+			"service_callable": false,
+			"authenticated_execute": false
+		},
+		{
+			"owner": "postgres",
+			"config": [
+				"search_path=\"\""
+			],
+			"exists": true,
+			"signature": "public.submit_portal_application(text,uuid,integer,boolean)",
+			"definition": "CREATE OR REPLACE FUNCTION public.submit_portal_application(p_token_hash text, p_application_id uuid, p_revision integer, p_declaration boolean)\n RETURNS jsonb\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO ''\nAS $function$\r\ndeclare s record; result jsonb; was_submitted boolean;\r\nbegin\r\n  select * into s from public.lock_voucher_portal_scope(p_token_hash,true);\r\n  if p_application_id is distinct from s.application_id then raise exception 'Application unavailable'; end if;\r\n  select submitted_at is not null into was_submitted from public.applications where id=s.application_id for update;\r\n  if s.legacy_user_id is null then\r\n  result := public.submit_application_principal(s.principal_id,s.application_id,p_revision,p_declaration);\r\n  else\r\n  result := public.submit_application(s.legacy_user_id,s.application_id,p_revision,p_declaration);\r\n  end if;\r\n  if not was_submitted then insert into public.audit_logs(actor_applicant_id,action,target_type,target_id)\r\n    values(s.principal_id,'voucher_application_submitted','applications',s.application_id::text); end if;\r\n  return result;\r\nend; $function$\n",
+			"anon_execute": false,
+			"public_execute": false,
+			"service_execute": true,
+			"security_definer": true,
+			"service_callable": true,
+			"authenticated_execute": false
+		}
+	],
+	"constraints": [
+		{
+			"name": "admin_notes_actor_id_fkey",
+			"table": "admin_notes",
+			"definition": "FOREIGN KEY (actor_id) REFERENCES profiles(id)"
+		},
+		{
+			"name": "admin_notes_application_id_fkey",
+			"table": "admin_notes",
+			"definition": "FOREIGN KEY (application_id) REFERENCES applications(id)"
+		},
+		{
+			"name": "admin_notes_context_revision_check",
+			"table": "admin_notes",
+			"definition": "CHECK ((context_revision >= 0))"
+		},
+		{
+			"name": "admin_notes_pkey",
+			"table": "admin_notes",
+			"definition": "PRIMARY KEY (id)"
+		},
+		{
+			"name": "applicant_notification_links_application_id_fkey",
+			"table": "applicant_notification_links",
+			"definition": "FOREIGN KEY (application_id) REFERENCES applications(id)"
+		},
+		{
+			"name": "applicant_notification_links_check",
+			"table": "applicant_notification_links",
+			"definition": "CHECK (((application_id IS NOT NULL) <> (payment_id IS NOT NULL)))"
+		},
+		{
+			"name": "applicant_notification_links_notification_id_fkey",
+			"table": "applicant_notification_links",
+			"definition": "FOREIGN KEY (notification_id) REFERENCES notifications(id)"
+		},
+		{
+			"name": "applicant_notification_links_payment_id_fkey",
+			"table": "applicant_notification_links",
+			"definition": "FOREIGN KEY (payment_id) REFERENCES payments(id)"
+		},
+		{
+			"name": "applicant_notification_links_pkey",
+			"table": "applicant_notification_links",
+			"definition": "PRIMARY KEY (notification_id)"
+		},
+		{
+			"name": "applicant_notification_links_voucher_access_id_fkey",
+			"table": "applicant_notification_links",
+			"definition": "FOREIGN KEY (voucher_access_id) REFERENCES voucher_access(id)"
+		},
+		{
+			"name": "applicant_principals_display_name_check",
+			"table": "applicant_principals",
+			"definition": "CHECK ((length(display_name) <= 200))"
+		},
+		{
+			"name": "applicant_principals_pkey",
+			"table": "applicant_principals",
+			"definition": "PRIMARY KEY (id)"
+		},
+		{
+			"name": "applicant_sessions_check",
+			"table": "applicant_sessions",
+			"definition": "CHECK ((absolute_expires_at = (created_at + '720:00:00'::interval)))"
+		},
+		{
+			"name": "applicant_sessions_check1",
+			"table": "applicant_sessions",
+			"definition": "CHECK (((last_seen_at >= created_at) AND (last_seen_at < absolute_expires_at)))"
+		},
+		{
+			"name": "applicant_sessions_check2",
+			"table": "applicant_sessions",
+			"definition": "CHECK ((idle_expires_at = LEAST((last_seen_at + '168:00:00'::interval), absolute_expires_at)))"
+		},
+		{
+			"name": "applicant_sessions_credential_version_check",
+			"table": "applicant_sessions",
+			"definition": "CHECK ((credential_version >= 0))"
+		},
+		{
+			"name": "applicant_sessions_pkey",
+			"table": "applicant_sessions",
+			"definition": "PRIMARY KEY (id)"
+		},
+		{
+			"name": "applicant_sessions_token_hash_check",
+			"table": "applicant_sessions",
+			"definition": "CHECK ((token_hash ~ '^[a-f0-9]{64}$'::text))"
+		},
+		{
+			"name": "applicant_sessions_token_hash_key",
+			"table": "applicant_sessions",
+			"definition": "UNIQUE (token_hash)"
+		},
+		{
+			"name": "applicant_sessions_voucher_access_id_fkey",
+			"table": "applicant_sessions",
+			"definition": "FOREIGN KEY (voucher_access_id) REFERENCES voucher_access(id)"
+		},
+		{
+			"name": "applicants_applicant_id_fkey",
+			"table": "applicants",
+			"definition": "FOREIGN KEY (applicant_id) REFERENCES applicant_principals(id)"
+		},
+		{
+			"name": "applicants_one_owner",
+			"table": "applicants",
+			"definition": "CHECK (((user_id IS NOT NULL) <> (applicant_id IS NOT NULL)))"
+		},
+		{
+			"name": "applicants_pkey",
+			"table": "applicants",
+			"definition": "PRIMARY KEY (id)"
+		},
+		{
+			"name": "applicants_user_id_fkey",
+			"table": "applicants",
+			"definition": "FOREIGN KEY (user_id) REFERENCES profiles(id)"
+		},
+		{
+			"name": "applicants_user_id_key",
+			"table": "applicants",
+			"definition": "UNIQUE (user_id)"
+		},
+		{
+			"name": "application_answers_application_id_fkey",
+			"table": "application_answers",
+			"definition": "FOREIGN KEY (application_id) REFERENCES applications(id) ON DELETE CASCADE"
+		},
+		{
+			"name": "application_answers_pkey",
+			"table": "application_answers",
+			"definition": "PRIMARY KEY (application_id, question_id)"
+		},
+		{
+			"name": "application_documents_applicant_id_fkey",
+			"table": "application_documents",
+			"definition": "FOREIGN KEY (applicant_id) REFERENCES applicant_principals(id)"
+		},
+		{
+			"name": "application_documents_application_id_fkey",
+			"table": "application_documents",
+			"definition": "FOREIGN KEY (application_id) REFERENCES applications(id) ON DELETE CASCADE"
+		},
+		{
+			"name": "application_documents_mime_type_check",
+			"table": "application_documents",
+			"definition": "CHECK ((mime_type = ANY (ARRAY['application/pdf'::text, 'image/jpeg'::text, 'image/png'::text])))"
+		},
+		{
+			"name": "application_documents_one_owner",
+			"table": "application_documents",
+			"definition": "CHECK (((user_id IS NOT NULL) <> (applicant_id IS NOT NULL)))"
+		},
+		{
+			"name": "application_documents_pkey",
+			"table": "application_documents",
+			"definition": "PRIMARY KEY (id)"
+		},
+		{
+			"name": "application_documents_size_bytes_check",
+			"table": "application_documents",
+			"definition": "CHECK (((size_bytes >= 1) AND (size_bytes <= 10485760)))"
+		},
+		{
+			"name": "application_documents_storage_path_key",
+			"table": "application_documents",
+			"definition": "UNIQUE (storage_path)"
+		},
+		{
+			"name": "application_documents_user_id_fkey",
+			"table": "application_documents",
+			"definition": "FOREIGN KEY (user_id) REFERENCES profiles(id)"
+		},
+		{
+			"name": "application_education_application_id_fkey",
+			"table": "application_education",
+			"definition": "FOREIGN KEY (application_id) REFERENCES applications(id) ON DELETE CASCADE"
+		},
+		{
+			"name": "application_education_check",
+			"table": "application_education",
+			"definition": "CHECK (((completion_date IS NULL) OR (start_date IS NULL) OR (completion_date >= start_date)))"
+		},
+		{
+			"name": "application_education_pkey",
+			"table": "application_education",
+			"definition": "PRIMARY KEY (id)"
+		},
+		{
+			"name": "application_experience_application_id_fkey",
+			"table": "application_experience",
+			"definition": "FOREIGN KEY (application_id) REFERENCES applications(id) ON DELETE CASCADE"
+		},
+		{
+			"name": "application_experience_check",
+			"table": "application_experience",
+			"definition": "CHECK (((end_date IS NULL) OR (start_date IS NULL) OR (end_date >= start_date)))"
+		},
+		{
+			"name": "application_experience_pkey",
+			"table": "application_experience",
+			"definition": "PRIMARY KEY (id)"
+		},
+		{
+			"name": "application_matches_application_id_employer_opportunity_id_key",
+			"table": "application_matches",
+			"definition": "UNIQUE (application_id, employer_opportunity_id)"
+		},
+		{
+			"name": "application_matches_application_id_fkey",
+			"table": "application_matches",
+			"definition": "FOREIGN KEY (application_id) REFERENCES applications(id)"
+		},
+		{
+			"name": "application_matches_created_by_fkey",
+			"table": "application_matches",
+			"definition": "FOREIGN KEY (created_by) REFERENCES profiles(id)"
+		},
+		{
+			"name": "application_matches_employer_opportunity_id_fkey",
+			"table": "application_matches",
+			"definition": "FOREIGN KEY (employer_opportunity_id) REFERENCES employer_opportunities(id)"
+		},
+		{
+			"name": "application_matches_pkey",
+			"table": "application_matches",
+			"definition": "PRIMARY KEY (id)"
+		},
+		{
+			"name": "application_matches_status_check",
+			"table": "application_matches",
+			"definition": "CHECK ((status = ANY (ARRAY['proposed'::text, 'qualified'::text, 'shortlisted'::text, 'referred'::text, 'closed'::text])))"
+		},
+		{
+			"name": "application_review_commands_actor_id_fkey",
+			"table": "application_review_commands",
+			"definition": "FOREIGN KEY (actor_id) REFERENCES profiles(id)"
+		},
+		{
+			"name": "application_review_commands_applicant_message_check",
+			"table": "application_review_commands",
+			"definition": "CHECK (((length(btrim(applicant_message)) >= 10) AND (length(btrim(applicant_message)) <= 2000)))"
+		},
+		{
+			"name": "application_review_commands_application_id_fkey",
+			"table": "application_review_commands",
+			"definition": "FOREIGN KEY (application_id) REFERENCES applications(id)"
+		},
+		{
+			"name": "application_review_commands_expected_revision_check",
+			"table": "application_review_commands",
+			"definition": "CHECK ((expected_revision >= 0))"
+		},
+		{
+			"name": "application_review_commands_pkey",
+			"table": "application_review_commands",
+			"definition": "PRIMARY KEY (request_id)"
+		},
+		{
+			"name": "application_status_history_actor_applicant_id_fkey",
+			"table": "application_status_history",
+			"definition": "FOREIGN KEY (actor_applicant_id) REFERENCES applicant_principals(id)"
+		},
+		{
+			"name": "application_status_history_actor_id_fkey",
+			"table": "application_status_history",
+			"definition": "FOREIGN KEY (actor_id) REFERENCES profiles(id)"
+		},
+		{
+			"name": "application_status_history_application_id_fkey",
+			"table": "application_status_history",
+			"definition": "FOREIGN KEY (application_id) REFERENCES applications(id)"
+		},
+		{
+			"name": "application_status_history_pkey",
+			"table": "application_status_history",
+			"definition": "PRIMARY KEY (id)"
+		},
+		{
+			"name": "history_one_actor",
+			"table": "application_status_history",
+			"definition": "CHECK (((actor_id IS NULL) OR (actor_applicant_id IS NULL)))"
+		},
+		{
+			"name": "applications_applicant_id_fkey",
+			"table": "applications",
+			"definition": "FOREIGN KEY (applicant_id) REFERENCES applicant_principals(id)"
+		},
+		{
+			"name": "applications_job_id_fkey",
+			"table": "applications",
+			"definition": "FOREIGN KEY (job_id) REFERENCES jobs(id)"
+		},
+		{
+			"name": "applications_one_owner",
+			"table": "applications",
+			"definition": "CHECK (((user_id IS NOT NULL) <> (applicant_id IS NOT NULL)))"
+		},
+		{
+			"name": "applications_pkey",
+			"table": "applications",
+			"definition": "PRIMARY KEY (id)"
+		},
+		{
+			"name": "applications_reference_key",
+			"table": "applications",
+			"definition": "UNIQUE (reference)"
+		},
+		{
+			"name": "applications_revision_check",
+			"table": "applications",
+			"definition": "CHECK ((revision >= 0))"
+		},
+		{
+			"name": "applications_user_id_fkey",
+			"table": "applications",
+			"definition": "FOREIGN KEY (user_id) REFERENCES profiles(id)"
+		},
+		{
+			"name": "applications_voucher_id_fkey",
+			"table": "applications",
+			"definition": "FOREIGN KEY (voucher_id) REFERENCES vouchers(id)"
+		},
+		{
+			"name": "applications_voucher_id_key",
+			"table": "applications",
+			"definition": "UNIQUE (voucher_id)"
+		},
+		{
+			"name": "audit_logs_actor_applicant_id_fkey",
+			"table": "audit_logs",
+			"definition": "FOREIGN KEY (actor_applicant_id) REFERENCES applicant_principals(id)"
+		},
+		{
+			"name": "audit_logs_actor_id_fkey",
+			"table": "audit_logs",
+			"definition": "FOREIGN KEY (actor_id) REFERENCES profiles(id)"
+		},
+		{
+			"name": "audit_logs_pkey",
+			"table": "audit_logs",
+			"definition": "PRIMARY KEY (id)"
+		},
+		{
+			"name": "audit_one_actor",
+			"table": "audit_logs",
+			"definition": "CHECK (((actor_id IS NULL) OR (actor_applicant_id IS NULL)))"
+		},
+		{
+			"name": "employer_opportunities_check",
+			"table": "employer_opportunities",
+			"definition": "CHECK (((NOT referral_authorized) OR (length(btrim(COALESCE(authorization_evidence, ''::text))) >= 10)))"
+		},
+		{
+			"name": "employer_opportunities_employer_id_fkey",
+			"table": "employer_opportunities",
+			"definition": "FOREIGN KEY (employer_id) REFERENCES employers(id)"
+		},
+		{
+			"name": "employer_opportunities_pkey",
+			"table": "employer_opportunities",
+			"definition": "PRIMARY KEY (id)"
+		},
+		{
+			"name": "employer_opportunities_source_url_check",
+			"table": "employer_opportunities",
+			"definition": "CHECK ((source_url ~ '^https://[^[:space:]]+$'::text))"
+		},
+		{
+			"name": "employer_opportunities_status_check",
+			"table": "employer_opportunities",
+			"definition": "CHECK ((status = ANY (ARRAY['research'::text, 'verified'::text, 'closed'::text])))"
+		},
+		{
+			"name": "employer_opportunities_title_check",
+			"table": "employer_opportunities",
+			"definition": "CHECK (((length(btrim(title)) >= 2) AND (length(btrim(title)) <= 200)))"
+		},
+		{
+			"name": "employers_name_check",
+			"table": "employers",
+			"definition": "CHECK (((length(btrim(name)) >= 2) AND (length(btrim(name)) <= 200)))"
+		},
+		{
+			"name": "employers_pkey",
+			"table": "employers",
+			"definition": "PRIMARY KEY (id)"
+		},
+		{
+			"name": "employers_website_check",
+			"table": "employers",
+			"definition": "CHECK (((website IS NULL) OR (website ~ '^https://[^[:space:]]+$'::text)))"
+		},
+		{
+			"name": "guest_checkouts_applicant_id_fkey",
+			"table": "guest_checkouts",
+			"definition": "FOREIGN KEY (applicant_id) REFERENCES applicant_principals(id)"
+		},
+		{
+			"name": "guest_checkouts_applicant_id_key",
+			"table": "guest_checkouts",
+			"definition": "UNIQUE (applicant_id)"
+		},
+		{
+			"name": "guest_checkouts_capability_hash_check",
+			"table": "guest_checkouts",
+			"definition": "CHECK ((capability_hash ~ '^[a-f0-9]{64}$'::text))"
+		},
+		{
+			"name": "guest_checkouts_capability_hash_key",
+			"table": "guest_checkouts",
+			"definition": "UNIQUE (capability_hash)"
+		},
+		{
+			"name": "guest_checkouts_check",
+			"table": "guest_checkouts",
+			"definition": "CHECK ((expires_at > created_at))"
+		},
+		{
+			"name": "guest_checkouts_contact_email_check",
+			"table": "guest_checkouts",
+			"definition": "CHECK (((length(btrim(contact_email)) >= 3) AND (length(btrim(contact_email)) <= 254)))"
+		},
+		{
+			"name": "guest_checkouts_contact_name_check",
+			"table": "guest_checkouts",
+			"definition": "CHECK ((length(contact_name) <= 200))"
+		},
+		{
+			"name": "guest_checkouts_contact_phone_check",
+			"table": "guest_checkouts",
+			"definition": "CHECK ((length(contact_phone) <= 40))"
+		},
+		{
+			"name": "guest_checkouts_country_code_fkey",
+			"table": "guest_checkouts",
+			"definition": "FOREIGN KEY (country_code) REFERENCES pricing_countries(code)"
+		},
+		{
+			"name": "guest_checkouts_id_applicant_id_key",
+			"table": "guest_checkouts",
+			"definition": "UNIQUE (id, applicant_id)"
+		},
+		{
+			"name": "guest_checkouts_pkey",
+			"table": "guest_checkouts",
+			"definition": "PRIMARY KEY (id)"
+		},
+		{
+			"name": "jobs_currency_check",
+			"table": "jobs",
+			"definition": "CHECK ((currency ~ '^[A-Z]{3}$'::text))"
+		},
+		{
+			"name": "jobs_minimum_age_check",
+			"table": "jobs",
+			"definition": "CHECK ((minimum_age >= 16))"
+		},
+		{
+			"name": "jobs_openings_check",
+			"table": "jobs",
+			"definition": "CHECK ((openings > 0))"
+		},
+		{
+			"name": "jobs_opportunity_type_check",
+			"table": "jobs",
+			"definition": "CHECK ((opportunity_type = ANY (ARRAY['managed'::text, 'research'::text])))"
+		},
+		{
+			"name": "jobs_pkey",
+			"table": "jobs",
+			"definition": "PRIMARY KEY (id)"
+		},
+		{
+			"name": "jobs_required_documents_check",
+			"table": "jobs",
+			"definition": "CHECK ((required_documents <@ ARRAY['cv'::text, 'passport'::text, 'certificate'::text, 'photo'::text, 'supporting'::text]))"
+		},
+		{
+			"name": "jobs_slug_key",
+			"table": "jobs",
+			"definition": "UNIQUE (slug)"
+		},
+		{
+			"name": "opportunity_source_https",
+			"table": "jobs",
+			"definition": "CHECK (((source_url IS NULL) OR (source_url ~ '^https://[^[:space:]]+$'::text)))"
+		},
+		{
+			"name": "published_managed_opportunity",
+			"table": "jobs",
+			"definition": "CHECK (((status <> 'published'::job_status) OR ((opportunity_type = 'managed'::text) AND ((length(btrim(COALESCE(service_description, ''::text))) >= 40) AND (length(btrim(COALESCE(service_description, ''::text))) <= 5000)))))"
+		},
+		{
+			"name": "notifications_applicant_id_fkey",
+			"table": "notifications",
+			"definition": "FOREIGN KEY (applicant_id) REFERENCES applicant_principals(id)"
+		},
+		{
+			"name": "notifications_one_owner",
+			"table": "notifications",
+			"definition": "CHECK (((user_id IS NOT NULL) <> (applicant_id IS NOT NULL)))"
+		},
+		{
+			"name": "notifications_pkey",
+			"table": "notifications",
+			"definition": "PRIMARY KEY (id)"
+		},
+		{
+			"name": "notifications_user_id_fkey",
+			"table": "notifications",
+			"definition": "FOREIGN KEY (user_id) REFERENCES profiles(id)"
+		},
+		{
+			"name": "payment_quotes_applicant_id_fkey",
+			"table": "payment_quotes",
+			"definition": "FOREIGN KEY (applicant_id) REFERENCES applicant_principals(id)"
+		},
+		{
+			"name": "payment_quotes_charge_amount_check",
+			"table": "payment_quotes",
+			"definition": "CHECK ((charge_amount > 0))"
+		},
+		{
+			"name": "payment_quotes_charge_currency_check",
+			"table": "payment_quotes",
+			"definition": "CHECK ((charge_currency = 'GHS'::text))"
+		},
+		{
+			"name": "payment_quotes_check",
+			"table": "payment_quotes",
+			"definition": "CHECK ((expires_at > created_at))"
+		},
+		{
+			"name": "payment_quotes_country_code_fkey",
+			"table": "payment_quotes",
+			"definition": "FOREIGN KEY (country_code) REFERENCES pricing_countries(code)"
+		},
+		{
+			"name": "payment_quotes_display_amount_check",
+			"table": "payment_quotes",
+			"definition": "CHECK (((display_amount >= 1) AND (display_amount <= '9007199254740991'::bigint)))"
+		},
+		{
+			"name": "payment_quotes_display_currency_fkey",
+			"table": "payment_quotes",
+			"definition": "FOREIGN KEY (display_currency) REFERENCES pricing_currencies(code)"
+		},
+		{
+			"name": "payment_quotes_display_minor_units_check",
+			"table": "payment_quotes",
+			"definition": "CHECK (((display_minor_units >= 0) AND (display_minor_units <= 4)))"
+		},
+		{
+			"name": "payment_quotes_one_owner",
+			"table": "payment_quotes",
+			"definition": "CHECK (((user_id IS NOT NULL) <> (applicant_id IS NOT NULL)))"
+		},
+		{
+			"name": "payment_quotes_pkey",
+			"table": "payment_quotes",
+			"definition": "PRIMARY KEY (id)"
+		},
+		{
+			"name": "payment_quotes_price_source_check",
+			"table": "payment_quotes",
+			"definition": "CHECK ((price_source = ANY (ARRAY['base'::text, 'region'::text, 'country'::text])))"
+		},
+		{
+			"name": "payment_quotes_user_id_fkey",
+			"table": "payment_quotes",
+			"definition": "FOREIGN KEY (user_id) REFERENCES profiles(id)"
+		},
+		{
+			"name": "payment_quotes_validity_days_check",
+			"table": "payment_quotes",
+			"definition": "CHECK (((validity_days >= 1) AND (validity_days <= 1095)))"
+		},
+		{
+			"name": "payment_quotes_voucher_type_id_fkey",
+			"table": "payment_quotes",
+			"definition": "FOREIGN KEY (voucher_type_id) REFERENCES voucher_types(id)"
+		},
+		{
+			"name": "principal_quote_checkout",
+			"table": "payment_quotes",
+			"definition": "CHECK (((applicant_id IS NULL) OR (guest_checkout_id IS NOT NULL)))"
+		},
+		{
+			"name": "quote_checkout_owner",
+			"table": "payment_quotes",
+			"definition": "FOREIGN KEY (guest_checkout_id, applicant_id) REFERENCES guest_checkouts(id, applicant_id)"
+		},
+		{
+			"name": "quote_checkout_requires_principal",
+			"table": "payment_quotes",
+			"definition": "CHECK (((guest_checkout_id IS NULL) OR (applicant_id IS NOT NULL)))"
+		},
+		{
+			"name": "payment_checkout_owner",
+			"table": "payments",
+			"definition": "FOREIGN KEY (guest_checkout_id, applicant_id) REFERENCES guest_checkouts(id, applicant_id)"
+		},
+		{
+			"name": "payment_checkout_requires_principal",
+			"table": "payments",
+			"definition": "CHECK (((guest_checkout_id IS NULL) OR (applicant_id IS NOT NULL)))"
+		},
+		{
+			"name": "payments_amount_check",
+			"table": "payments",
+			"definition": "CHECK ((amount > 0))"
+		},
+		{
+			"name": "payments_applicant_id_fkey",
+			"table": "payments",
+			"definition": "FOREIGN KEY (applicant_id) REFERENCES applicant_principals(id)"
+		},
+		{
+			"name": "payments_currency_check",
+			"table": "payments",
+			"definition": "CHECK ((currency ~ '^[A-Z]{3}$'::text))"
+		},
+		{
+			"name": "payments_job_id_fkey",
+			"table": "payments",
+			"definition": "FOREIGN KEY (job_id) REFERENCES jobs(id)"
+		},
+		{
+			"name": "payments_one_owner",
+			"table": "payments",
+			"definition": "CHECK (((user_id IS NOT NULL) <> (applicant_id IS NOT NULL)))"
+		},
+		{
+			"name": "payments_pkey",
+			"table": "payments",
+			"definition": "PRIMARY KEY (id)"
+		},
+		{
+			"name": "payments_quote_id_fkey",
+			"table": "payments",
+			"definition": "FOREIGN KEY (quote_id) REFERENCES payment_quotes(id)"
+		},
+		{
+			"name": "payments_quote_id_key",
+			"table": "payments",
+			"definition": "UNIQUE (quote_id)"
+		},
+		{
+			"name": "payments_reference_key",
+			"table": "payments",
+			"definition": "UNIQUE (reference)"
+		},
+		{
+			"name": "payments_user_id_fkey",
+			"table": "payments",
+			"definition": "FOREIGN KEY (user_id) REFERENCES profiles(id)"
+		},
+		{
+			"name": "payments_validity_days_check",
+			"table": "payments",
+			"definition": "CHECK (((validity_days >= 1) AND (validity_days <= 1095)))"
+		},
+		{
+			"name": "payments_voucher_type_id_fkey",
+			"table": "payments",
+			"definition": "FOREIGN KEY (voucher_type_id) REFERENCES voucher_types(id)"
+		},
+		{
+			"name": "principal_payment_checkout",
+			"table": "payments",
+			"definition": "CHECK (((applicant_id IS NULL) OR (guest_checkout_id IS NOT NULL)))"
+		},
+		{
+			"name": "quoted_payment_has_snapshot",
+			"table": "payments",
+			"definition": "CHECK (((quote_id IS NULL) OR ((currency = 'GHS'::text) AND (product_name IS NOT NULL) AND (country_code IS NOT NULL) AND (price_source = ANY (ARRAY['base'::text, 'region'::text, 'country'::text])) AND (price_source IS NOT NULL) AND (display_amount IS NOT NULL) AND ((display_amount >= 1) AND (display_amount <= '9007199254740991'::bigint)) AND (display_currency IS NOT NULL) AND (display_currency ~ '^[A-Z]{3}$'::text) AND (display_minor_units IS NOT NULL) AND ((display_minor_units >= 0) AND (display_minor_units <= 4)) AND ((display_currency = 'GHS'::text) OR ((exchange_rate IS NOT NULL) AND (exchange_rate > (0)::numeric) AND (exchange_rate_source IS NOT NULL) AND (exchange_rate_as_of IS NOT NULL))))))"
+		},
+		{
+			"name": "platform_settings_pkey",
+			"table": "platform_settings",
+			"definition": "PRIMARY KEY (key)"
+		},
+		{
+			"name": "pricing_countries_code_check",
+			"table": "pricing_countries",
+			"definition": "CHECK ((code ~ '^[A-Z]{2}$'::text))"
+		},
+		{
+			"name": "pricing_countries_pkey",
+			"table": "pricing_countries",
+			"definition": "PRIMARY KEY (code)"
+		},
+		{
+			"name": "pricing_countries_region_id_fkey",
+			"table": "pricing_countries",
+			"definition": "FOREIGN KEY (region_id) REFERENCES pricing_regions(id)"
+		},
+		{
+			"name": "pricing_currencies_code_check",
+			"table": "pricing_currencies",
+			"definition": "CHECK ((code ~ '^[A-Z]{3}$'::text))"
+		},
+		{
+			"name": "pricing_currencies_minor_units_check",
+			"table": "pricing_currencies",
+			"definition": "CHECK (((minor_units >= 0) AND (minor_units <= 4)))"
+		},
+		{
+			"name": "pricing_currencies_pkey",
+			"table": "pricing_currencies",
+			"definition": "PRIMARY KEY (code)"
+		},
+		{
+			"name": "pricing_exchange_rates_base_currency_check",
+			"table": "pricing_exchange_rates",
+			"definition": "CHECK ((base_currency = 'GHS'::text))"
+		},
+		{
+			"name": "pricing_exchange_rates_check",
+			"table": "pricing_exchange_rates",
+			"definition": "CHECK ((valid_until > as_of))"
+		},
+		{
+			"name": "pricing_exchange_rates_pkey",
+			"table": "pricing_exchange_rates",
+			"definition": "PRIMARY KEY (quote_currency)"
+		},
+		{
+			"name": "pricing_exchange_rates_quote_currency_check",
+			"table": "pricing_exchange_rates",
+			"definition": "CHECK ((quote_currency <> 'GHS'::text))"
+		},
+		{
+			"name": "pricing_exchange_rates_quote_currency_fkey",
+			"table": "pricing_exchange_rates",
+			"definition": "FOREIGN KEY (quote_currency) REFERENCES pricing_currencies(code)"
+		},
+		{
+			"name": "pricing_exchange_rates_rate_check",
+			"table": "pricing_exchange_rates",
+			"definition": "CHECK (((rate > (0)::numeric) AND (rate <= (1000000)::numeric)))"
+		},
+		{
+			"name": "pricing_exchange_rates_source_check",
+			"table": "pricing_exchange_rates",
+			"definition": "CHECK (((length(source) >= 1) AND (length(source) <= 200)))"
+		},
+		{
+			"name": "pricing_regions_code_key",
+			"table": "pricing_regions",
+			"definition": "UNIQUE (code)"
+		},
+		{
+			"name": "pricing_regions_display_currency_fkey",
+			"table": "pricing_regions",
+			"definition": "FOREIGN KEY (display_currency) REFERENCES pricing_currencies(code)"
+		},
+		{
+			"name": "pricing_regions_pkey",
+			"table": "pricing_regions",
+			"definition": "PRIMARY KEY (id)"
+		},
+		{
+			"name": "profiles_id_fkey",
+			"table": "profiles",
+			"definition": "FOREIGN KEY (id) REFERENCES auth.users(id) ON DELETE CASCADE"
+		},
+		{
+			"name": "profiles_pkey",
+			"table": "profiles",
+			"definition": "PRIMARY KEY (id)"
+		},
+		{
+			"name": "request_limits_attempts_check",
+			"table": "request_limits",
+			"definition": "CHECK ((attempts > 0))"
+		},
+		{
+			"name": "request_limits_pkey",
+			"table": "request_limits",
+			"definition": "PRIMARY KEY (key)"
+		},
+		{
+			"name": "voucher_access_applicant_id_fkey",
+			"table": "voucher_access",
+			"definition": "FOREIGN KEY (applicant_id) REFERENCES applicant_principals(id)"
+		},
+		{
+			"name": "voucher_access_applicant_id_key",
+			"table": "voucher_access",
+			"definition": "UNIQUE (applicant_id)"
+		},
+		{
+			"name": "voucher_access_check",
+			"table": "voucher_access",
+			"definition": "CHECK ((((credential_state = 'legacy'::text) AND (legacy_user_id IS NOT NULL) AND (pin_hash IS NULL) AND (credential_version = 0) AND (credential_rotated_at IS NULL)) OR ((credential_state = 'pending_delivery'::text) AND (legacy_user_id IS NULL) AND (pin_hash IS NULL) AND (credential_version = 0) AND (credential_rotated_at IS NULL)) OR ((credential_state = 'current'::text) AND (pin_hash IS NOT NULL) AND (pin_hash ~ '^s[12]:[a-f0-9]{32}:[a-f0-9]{64}$'::text) AND (credential_version > 0) AND (credential_rotated_at IS NOT NULL))))"
+		},
+		{
+			"name": "voucher_access_credential_state_check",
+			"table": "voucher_access",
+			"definition": "CHECK ((credential_state = ANY (ARRAY['legacy'::text, 'pending_delivery'::text, 'current'::text])))"
+		},
+		{
+			"name": "voucher_access_credential_version_check",
+			"table": "voucher_access",
+			"definition": "CHECK ((credential_version >= 0))"
+		},
+		{
+			"name": "voucher_access_legacy_user_id_fkey",
+			"table": "voucher_access",
+			"definition": "FOREIGN KEY (legacy_user_id) REFERENCES profiles(id)"
+		},
+		{
+			"name": "voucher_access_pkey",
+			"table": "voucher_access",
+			"definition": "PRIMARY KEY (id)"
+		},
+		{
+			"name": "voucher_access_voucher_id_fkey",
+			"table": "voucher_access",
+			"definition": "FOREIGN KEY (voucher_id) REFERENCES vouchers(id)"
+		},
+		{
+			"name": "voucher_access_voucher_id_key",
+			"table": "voucher_access",
+			"definition": "UNIQUE (voucher_id)"
+		},
+		{
+			"name": "voucher_contact_challenges_check",
+			"table": "voucher_contact_challenges",
+			"definition": "CHECK ((expires_at > created_at))"
+		},
+		{
+			"name": "voucher_contact_challenges_contact_id_voucher_access_id_fkey",
+			"table": "voucher_contact_challenges",
+			"definition": "FOREIGN KEY (contact_id, voucher_access_id) REFERENCES voucher_contacts(id, voucher_access_id)"
+		},
+		{
+			"name": "voucher_contact_challenges_contact_version_check",
+			"table": "voucher_contact_challenges",
+			"definition": "CHECK ((contact_version > 0))"
+		},
+		{
+			"name": "voucher_contact_challenges_failed_attempts_check",
+			"table": "voucher_contact_challenges",
+			"definition": "CHECK ((failed_attempts >= 0))"
+		},
+		{
+			"name": "voucher_contact_challenges_pkey",
+			"table": "voucher_contact_challenges",
+			"definition": "PRIMARY KEY (id)"
+		},
+		{
+			"name": "voucher_contact_challenges_purpose_check",
+			"table": "voucher_contact_challenges",
+			"definition": "CHECK ((purpose = ANY (ARRAY['verify_contact'::text, 'reset_pin'::text])))"
+		},
+		{
+			"name": "voucher_contact_challenges_token_hash_check",
+			"table": "voucher_contact_challenges",
+			"definition": "CHECK ((token_hash ~ '^[a-f0-9]{64}$'::text))"
+		},
+		{
+			"name": "voucher_contact_challenges_token_hash_key",
+			"table": "voucher_contact_challenges",
+			"definition": "UNIQUE (token_hash)"
+		},
+		{
+			"name": "voucher_contact_challenges_voucher_access_id_fkey",
+			"table": "voucher_contact_challenges",
+			"definition": "FOREIGN KEY (voucher_access_id) REFERENCES voucher_access(id)"
+		},
+		{
+			"name": "voucher_contacts_contact_version_check",
+			"table": "voucher_contacts",
+			"definition": "CHECK ((contact_version > 0))"
+		},
+		{
+			"name": "voucher_contacts_email_check",
+			"table": "voucher_contacts",
+			"definition": "CHECK (((length(btrim(email)) >= 3) AND (length(btrim(email)) <= 254)))"
+		},
+		{
+			"name": "voucher_contacts_id_voucher_access_id_key",
+			"table": "voucher_contacts",
+			"definition": "UNIQUE (id, voucher_access_id)"
+		},
+		{
+			"name": "voucher_contacts_pkey",
+			"table": "voucher_contacts",
+			"definition": "PRIMARY KEY (id)"
+		},
+		{
+			"name": "voucher_contacts_voucher_access_id_fkey",
+			"table": "voucher_contacts",
+			"definition": "FOREIGN KEY (voucher_access_id) REFERENCES voucher_access(id)"
+		},
+		{
+			"name": "voucher_contacts_voucher_access_id_key",
+			"table": "voucher_contacts",
+			"definition": "UNIQUE (voucher_access_id)"
+		},
+		{
+			"name": "voucher_credential_deliveries_capability_hash_check",
+			"table": "voucher_credential_deliveries",
+			"definition": "CHECK ((capability_hash ~ '^[a-f0-9]{64}$'::text))"
+		},
+		{
+			"name": "voucher_credential_deliveries_capability_hash_key",
+			"table": "voucher_credential_deliveries",
+			"definition": "UNIQUE (capability_hash)"
+		},
+		{
+			"name": "voucher_credential_deliveries_check",
+			"table": "voucher_credential_deliveries",
+			"definition": "CHECK ((expires_at > created_at))"
+		},
+		{
+			"name": "voucher_credential_deliveries_guest_checkout_id_fkey",
+			"table": "voucher_credential_deliveries",
+			"definition": "FOREIGN KEY (guest_checkout_id) REFERENCES guest_checkouts(id)"
+		},
+		{
+			"name": "voucher_credential_deliveries_guest_checkout_id_key",
+			"table": "voucher_credential_deliveries",
+			"definition": "UNIQUE (guest_checkout_id)"
+		},
+		{
+			"name": "voucher_credential_deliveries_pkey",
+			"table": "voucher_credential_deliveries",
+			"definition": "PRIMARY KEY (id)"
+		},
+		{
+			"name": "voucher_credential_deliveries_voucher_access_id_fkey",
+			"table": "voucher_credential_deliveries",
+			"definition": "FOREIGN KEY (voucher_access_id) REFERENCES voucher_access(id)"
+		},
+		{
+			"name": "voucher_credential_deliveries_voucher_access_id_key",
+			"table": "voucher_credential_deliveries",
+			"definition": "UNIQUE (voucher_access_id)"
+		},
+		{
+			"name": "voucher_price_overrides_charge_amount_check",
+			"table": "voucher_price_overrides",
+			"definition": "CHECK ((charge_amount > 0))"
+		},
+		{
+			"name": "voucher_price_overrides_check",
+			"table": "voucher_price_overrides",
+			"definition": "CHECK (((((country_code IS NOT NULL))::integer + ((region_id IS NOT NULL))::integer) = 1))"
+		},
+		{
+			"name": "voucher_price_overrides_country_code_fkey",
+			"table": "voucher_price_overrides",
+			"definition": "FOREIGN KEY (country_code) REFERENCES pricing_countries(code)"
+		},
+		{
+			"name": "voucher_price_overrides_pkey",
+			"table": "voucher_price_overrides",
+			"definition": "PRIMARY KEY (id)"
+		},
+		{
+			"name": "voucher_price_overrides_region_id_fkey",
+			"table": "voucher_price_overrides",
+			"definition": "FOREIGN KEY (region_id) REFERENCES pricing_regions(id)"
+		},
+		{
+			"name": "voucher_price_overrides_voucher_type_id_fkey",
+			"table": "voucher_price_overrides",
+			"definition": "FOREIGN KEY (voucher_type_id) REFERENCES voucher_types(id)"
+		},
+		{
+			"name": "active_voucher_requires_price",
+			"table": "voucher_types",
+			"definition": "CHECK (((NOT active) OR (amount IS NOT NULL)))"
+		},
+		{
+			"name": "voucher_types_amount_check",
+			"table": "voucher_types",
+			"definition": "CHECK ((amount > 0))"
+		},
+		{
+			"name": "voucher_types_code_key",
+			"table": "voucher_types",
+			"definition": "UNIQUE (code)"
+		},
+		{
+			"name": "voucher_types_currency_check",
+			"table": "voucher_types",
+			"definition": "CHECK ((currency ~ '^[A-Z]{3}$'::text))"
+		},
+		{
+			"name": "voucher_types_pkey",
+			"table": "voucher_types",
+			"definition": "PRIMARY KEY (id)"
+		},
+		{
+			"name": "voucher_types_validity_days_check",
+			"table": "voucher_types",
+			"definition": "CHECK (((validity_days >= 1) AND (validity_days <= 1095)))"
+		},
+		{
+			"name": "voucher_credential_owner",
+			"table": "vouchers",
+			"definition": "CHECK ((((user_id IS NOT NULL) AND (pin_hash IS NOT NULL) AND (pin_encrypted IS NOT NULL)) OR ((applicant_id IS NOT NULL) AND (pin_hash IS NULL) AND (pin_encrypted IS NULL))))"
+		},
+		{
+			"name": "vouchers_applicant_id_fkey",
+			"table": "vouchers",
+			"definition": "FOREIGN KEY (applicant_id) REFERENCES applicant_principals(id)"
+		},
+		{
+			"name": "vouchers_job_id_fkey",
+			"table": "vouchers",
+			"definition": "FOREIGN KEY (job_id) REFERENCES jobs(id)"
+		},
+		{
+			"name": "vouchers_one_owner",
+			"table": "vouchers",
+			"definition": "CHECK (((user_id IS NOT NULL) <> (applicant_id IS NOT NULL)))"
+		},
+		{
+			"name": "vouchers_payment_id_fkey",
+			"table": "vouchers",
+			"definition": "FOREIGN KEY (payment_id) REFERENCES payments(id)"
+		},
+		{
+			"name": "vouchers_payment_id_key",
+			"table": "vouchers",
+			"definition": "UNIQUE (payment_id)"
+		},
+		{
+			"name": "vouchers_pkey",
+			"table": "vouchers",
+			"definition": "PRIMARY KEY (id)"
+		},
+		{
+			"name": "vouchers_serial_key",
+			"table": "vouchers",
+			"definition": "UNIQUE (serial)"
+		},
+		{
+			"name": "vouchers_user_id_fkey",
+			"table": "vouchers",
+			"definition": "FOREIGN KEY (user_id) REFERENCES profiles(id)"
+		},
+		{
+			"name": "vouchers_voucher_type_id_fkey",
+			"table": "vouchers",
+			"definition": "FOREIGN KEY (voucher_type_id) REFERENCES voucher_types(id)"
+		}
+	],
+	"owner_columns": [
+		{
+			"data_type": "uuid",
+			"table_name": "applicants",
+			"column_name": "applicant_id",
+			"is_nullable": "YES"
+		},
+		{
+			"data_type": "uuid",
+			"table_name": "applicants",
+			"column_name": "user_id",
+			"is_nullable": "YES"
+		},
+		{
+			"data_type": "uuid",
+			"table_name": "application_documents",
+			"column_name": "applicant_id",
+			"is_nullable": "YES"
+		},
+		{
+			"data_type": "uuid",
+			"table_name": "application_documents",
+			"column_name": "user_id",
+			"is_nullable": "YES"
+		},
+		{
+			"data_type": "uuid",
+			"table_name": "applications",
+			"column_name": "applicant_id",
+			"is_nullable": "YES"
+		},
+		{
+			"data_type": "uuid",
+			"table_name": "applications",
+			"column_name": "user_id",
+			"is_nullable": "YES"
+		},
+		{
+			"data_type": "uuid",
+			"table_name": "notifications",
+			"column_name": "applicant_id",
+			"is_nullable": "YES"
+		},
+		{
+			"data_type": "uuid",
+			"table_name": "notifications",
+			"column_name": "user_id",
+			"is_nullable": "YES"
+		},
+		{
+			"data_type": "uuid",
+			"table_name": "payment_quotes",
+			"column_name": "applicant_id",
+			"is_nullable": "YES"
+		},
+		{
+			"data_type": "uuid",
+			"table_name": "payment_quotes",
+			"column_name": "user_id",
+			"is_nullable": "YES"
+		},
+		{
+			"data_type": "uuid",
+			"table_name": "payments",
+			"column_name": "applicant_id",
+			"is_nullable": "YES"
+		},
+		{
+			"data_type": "uuid",
+			"table_name": "payments",
+			"column_name": "user_id",
+			"is_nullable": "YES"
+		},
+		{
+			"data_type": "uuid",
+			"table_name": "vouchers",
+			"column_name": "applicant_id",
+			"is_nullable": "YES"
+		},
+		{
+			"data_type": "uuid",
+			"table_name": "vouchers",
+			"column_name": "user_id",
+			"is_nullable": "YES"
+		}
+	],
+	"private_tables": [
+		{
+			"name": "applicant_notification_links",
+			"force_rls": false,
+			"rls_enabled": true,
+			"policy_count": 0,
+			"service_delete": true,
+			"service_insert": true,
+			"service_select": true,
+			"service_update": true,
+			"any_anon_privilege": false,
+			"any_authenticated_privilege": false
+		},
+		{
+			"name": "applicant_principals",
+			"force_rls": false,
+			"rls_enabled": true,
+			"policy_count": 0,
+			"service_delete": true,
+			"service_insert": true,
+			"service_select": true,
+			"service_update": true,
+			"any_anon_privilege": false,
+			"any_authenticated_privilege": false
+		},
+		{
+			"name": "applicant_sessions",
+			"force_rls": false,
+			"rls_enabled": true,
+			"policy_count": 0,
+			"service_delete": true,
+			"service_insert": true,
+			"service_select": true,
+			"service_update": true,
+			"any_anon_privilege": false,
+			"any_authenticated_privilege": false
+		},
+		{
+			"name": "guest_checkouts",
+			"force_rls": false,
+			"rls_enabled": true,
+			"policy_count": 0,
+			"service_delete": true,
+			"service_insert": true,
+			"service_select": true,
+			"service_update": true,
+			"any_anon_privilege": false,
+			"any_authenticated_privilege": false
+		},
+		{
+			"name": "voucher_access",
+			"force_rls": false,
+			"rls_enabled": true,
+			"policy_count": 0,
+			"service_delete": true,
+			"service_insert": true,
+			"service_select": true,
+			"service_update": true,
+			"any_anon_privilege": false,
+			"any_authenticated_privilege": false
+		},
+		{
+			"name": "voucher_contact_challenges",
+			"force_rls": false,
+			"rls_enabled": true,
+			"policy_count": 0,
+			"service_delete": true,
+			"service_insert": true,
+			"service_select": true,
+			"service_update": true,
+			"any_anon_privilege": false,
+			"any_authenticated_privilege": false
+		},
+		{
+			"name": "voucher_contacts",
+			"force_rls": false,
+			"rls_enabled": true,
+			"policy_count": 0,
+			"service_delete": true,
+			"service_insert": true,
+			"service_select": true,
+			"service_update": true,
+			"any_anon_privilege": false,
+			"any_authenticated_privilege": false
+		},
+		{
+			"name": "voucher_credential_deliveries",
+			"force_rls": false,
+			"rls_enabled": true,
+			"policy_count": 0,
+			"service_delete": true,
+			"service_insert": true,
+			"service_select": true,
+			"service_update": true,
+			"any_anon_privilege": false,
+			"any_authenticated_privilege": false
+		}
+	],
+	"voucher_pin_columns": [
+		{
+			"column": "pin_encrypted",
+			"nullable": "YES"
+		},
+		{
+			"column": "pin_hash",
+			"nullable": "YES"
+		}
+	],
+	"notification_trigger": {
+		"enabled": "O",
+		"function": "link_voucher_application_notification",
+		"definition": "CREATE TRIGGER voucher_application_notification AFTER INSERT ON public.notifications FOR EACH ROW EXECUTE FUNCTION link_voucher_application_notification()"
+	}
+}

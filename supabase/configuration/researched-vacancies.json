@@ -1,0 +1,55 @@
+{
+  "checked_on": "2026-09-29",
+  "publication_status": "draft",
+  "application_route": "official employer website; CruiseApply routing decision pending",
+  "jobs": [
+    {
+      "title": "2nd Engineer",
+      "slug": "carnival-2nd-engineer-22",
+      "source": "https://shipjobs.carnival.com/job/2nd-engineer/22",
+      "category": "Marine Operations",
+      "department": "Engine",
+      "summary": "Shipboard engineering position overseeing machinery during engine-room watches and supporting safe technical operations.",
+      "responsibilities": ["Monitor propulsion and auxiliary equipment during assigned watches.", "Maintain engineering records and support planned maintenance."],
+      "requirements": ["IMO Regulation III/2 second-engineer certification and relevant STCW certificates.", "High-school qualification and the employer's stated age eligibility.", "Confirm experience eligibility with Carnival: the detailed requirements specify three or more watchkeeping years, while the summary panel specifies five years in similar roles."],
+      "preferred_qualifications": ["Cruise-ship and second-engineer experience."],
+      "minimum_age": null
+    },
+    {
+      "title": "2nd ETO",
+      "slug": "carnival-2nd-eto-534",
+      "source": "https://shipjobs.carnival.com/job/2nd-eto/534",
+      "category": "Marine Operations",
+      "department": "Engine",
+      "summary": "Electro-technical position maintaining shipboard electrical equipment, automation and communication systems.",
+      "responsibilities": ["Perform planned electrical maintenance and fault repairs.", "Support safe operation of navigation, power and control equipment."],
+      "requirements": ["STCW III/6 competency certificate and required basic training.", "The detailed listing specifies 24–36 months of cruise-ship electro-technical officer experience.", "English proficiency and the employer's stated age eligibility."],
+      "preferred_qualifications": ["Relevant electro-technical degree and experience at the same or a more senior shipboard level."],
+      "minimum_age": null
+    },
+    {
+      "title": "Public Health Officer",
+      "slug": "carnival-public-health-officer-99",
+      "source": "https://shipjobs.carnival.com/job/public-health-officer/99",
+      "category": "Hotel Operations",
+      "department": "Housekeeping",
+      "summary": "Shipboard public-health position supporting sanitation, infection prevention, inspections and crew training.",
+      "responsibilities": ["Audit public-health practices and communicate corrective actions.", "Support disease prevention, water safety and pest-management programmes."],
+      "requirements": ["Relevant public-health, environmental-health, medical or related scientific background.", "Two years of shipboard or three years of full-time shoreside public-health programme experience.", "At least 21 years old; consult the source for all qualification requirements."],
+      "preferred_qualifications": ["Cruise-industry experience and relevant sanitation or infection-control certifications."],
+      "minimum_age": 21
+    },
+    {
+      "title": "Commis Team Dining",
+      "slug": "carnival-commis-team-dining-186",
+      "source": "https://shipjobs.carnival.com/job/commis-team-dining/186",
+      "category": "Hotel Operations",
+      "department": "Culinary Arts",
+      "summary": "Crew-galley cooking role preparing meals for shipboard team members and supporting food-quality and sanitation standards.",
+      "responsibilities": ["Prepare crew meals under the staff chef's direction.", "Support stock checks, kitchen hygiene and efficient meal service."],
+      "requirements": ["Conversational English and foundational culinary skills.", "At least one year in a four-star-or-higher hotel or restaurant kitchen serving continental food."],
+      "preferred_qualifications": ["Hospitality or food-production qualification; the employer identifies this as preferred, not mandatory."],
+      "minimum_age": null
+    }
+  ]
+}

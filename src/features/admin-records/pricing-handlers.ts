@@ -1,0 +1,5 @@
+import "server-only";
+import {apiUser,ApiError,apiError,assertSameOrigin,readJson,json} from "@/lib/http";
+import {serviceDatabase} from "@/lib/supabase/server";
+import {pricingCommand} from "./pricing-schema";
+export async function savePricing(request:Request){try{assertSameOrigin(request);const {user,profile}=await apiUser(true);if(profile.role!=="super_admin")throw new ApiError(403,"A super administrator is required.");const input=pricingCommand.parse(await readJson(request));const r=await serviceDatabase().rpc("save_pricing_configuration",{p_request_id:input.requestId,p_actor_id:user.id,p_entity:input.entity,p_key:input.key,p_expected:input.expected,p_data:input.data});if(r.error){if(r.error.message==="Super administrator required")throw new ApiError(403,"Staff authorization changed.");if(["P0001","23505","23503","23514"].includes(r.error.code))throw new ApiError(409,"Configuration changed or is invalid. Reload and review before saving.");throw new Error("Configuration unavailable");}return json(r.data);}catch(e){return apiError(e);}}

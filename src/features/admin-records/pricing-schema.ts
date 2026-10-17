@@ -1,0 +1,11 @@
+import {z} from "zod";
+export const pricingEntities=["region","country","exchange","override","contact"] as const;
+const nullableId=z.uuid().nullable();
+const dataSchemas={
+ region:z.object({code:z.string().regex(/^[a-z0-9][a-z0-9-]{0,79}$/),name:z.string().trim().min(2).max(200),display_currency:z.string().regex(/^[A-Z]{3}$/),active:z.boolean()}).strict(),
+ country:z.object({region_id:nullableId}).strict(),
+ exchange:z.object({rate:z.string().regex(/^[0-9]{1,7}(\.[0-9]{1,10})?$/).refine(v=>Number(v)>0&&Number(v)<=1000000),source:z.string().trim().min(1).max(200),as_of:z.iso.datetime({offset:true}),valid_until:z.iso.datetime({offset:true})}).strict().refine(v=>Date.parse(v.valid_until)>Date.parse(v.as_of),"Expiry must follow the effective time."),
+ override:z.object({voucher_type_id:z.uuid(),country_code:z.string().regex(/^[A-Z]{2}$/).nullable(),region_id:nullableId,charge_amount:z.number().int().min(1).max(999999999),active:z.boolean()}).strict().refine(v=>(v.country_code===null)!==(v.region_id===null),"Select exactly one country or region."),
+ contact:z.object({value:z.string().trim().min(3).max(254).refine(v=>!/[\r\n]/.test(v))}).strict()
+};
+export const pricingCommand=z.object({requestId:z.uuid(),entity:z.enum(pricingEntities),key:z.string().min(1).max(100),expected:z.record(z.string(),z.unknown()).nullable(),data:z.unknown()}).strict().transform((v,ctx)=>{const result=dataSchemas[v.entity].safeParse(v.data);if(!result.success){ctx.addIssue({code:"custom",message:result.error.issues.map(i=>i.message).join(" ")});return z.NEVER;}if((['region','override'].includes(v.entity)&&!z.uuid().safeParse(v.key).success)||(v.entity==='country'&&!/^[A-Z]{2}$/.test(v.key))||(v.entity==='exchange'&&(!/^[A-Z]{3}$/.test(v.key)||v.key==='GHS'))||(v.entity==='contact'&&!['support_email','support_phone'].includes(v.key))){ctx.addIssue({code:"custom",message:"Invalid configuration key."});return z.NEVER;}if(v.entity==='contact'){const value=(result.data as {value:string}).value;if(v.key==='support_email'?!z.email().safeParse(value).success:!/^\+?[0-9 ()-]{3,40}$/.test(value)){ctx.addIssue({code:"custom",message:"Enter a valid public support contact."});return z.NEVER;}}return {...v,data:result.data};});

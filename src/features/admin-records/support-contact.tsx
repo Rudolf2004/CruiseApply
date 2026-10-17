@@ -1,0 +1,4 @@
+import {z} from "zod";
+import {database} from "@/lib/supabase/server";
+import {hasSupabase} from "@/lib/config";
+export async function SupportContact(){if(!hasSupabase)return null;const db=await database();const r=await db.from('platform_settings').select('key,value').in('key',['support_email','support_phone']).eq('public',true);if(r.error)return null;const email=r.data.find(v=>v.key==='support_email')?.value,phone=r.data.find(v=>v.key==='support_phone')?.value;return <div className="grid gap-2 mb-5">{typeof email==='string'&&z.email().safeParse(email).success&&<a className="text-primary underline" href={'mailto:'+email}>{email}</a>}{typeof phone==='string'&&/^[+0-9 ()-]{3,40}$/.test(phone)&&<a className="text-primary underline" href={'tel:'+phone.replaceAll(/[^+0-9]/g,'')}>{phone}</a>}</div>;}
