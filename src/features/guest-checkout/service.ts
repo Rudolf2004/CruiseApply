@@ -21,7 +21,13 @@ export async function guestStatus(raw:string|null){return z.object({checkout_id:
 export async function guestQuote(input:unknown,clientKey:string,previous:string|null){
   guestEnabled();const values=z.object({voucherTypeId:z.uuid(),countryCode:z.string().regex(/^[A-Z]{2}$/),email:z.email().max(254),name:z.string().trim().min(1).max(200)}).strict().parse(input);
   await paymentLimit(`guest-quote:${clientKey}`,20,600);
-  if(previous){let pending=false;try{pending=!!(await guestStatus(previous)).payment;}catch(error){if(!(error instanceof ApiError&&error.status===401)&&!(error instanceof ApplicantAuthError&&error.status===401))throw error;}if(pending)throw new ApiError(409,"An existing checkout is linked to this browser. Open its payment status before starting another purchase.");}
+  if(previous){
+    let prior:Awaited<ReturnType<typeof guestStatus>>|null=null;
+    try{prior=await guestStatus(previous);}catch(error){if(!(error instanceof ApiError&&error.status===401)&&!(error instanceof ApplicantAuthError&&error.status===401))throw error;}
+    const payment=prior?.payment;
+    if(payment?.status==="successful"&&payment.claim_available!==false)throw new ApiError(409,"Your previous payment is complete. Receive and save its Serial Number and PIN before buying another voucher.");
+    if(payment&&!['successful','refunded','failed'].includes(payment.status))throw new ApiError(409,"Your earlier payment is still awaiting confirmation. Open its payment status before starting another purchase.");
+  }
   const raw=randomBytes(32).toString("base64url"),db=serviceDatabase();
   const created=await db.rpc("begin_guest_checkout",{p_capability_hash:tokenDigest(raw),p_email:values.email,p_name:values.name,p_country_code:values.countryCode});
   if(created.error)throw new ApiError(503,"Checkout could not be prepared. Please retry.");
