@@ -28,3 +28,10 @@ it.each(["pending","initialized","unknown"])("keeps %s payments protected from a
 });
 it("protects paid but unclaimed credentials",async()=>{await expect(guestQuote(purchase,"client",raw)).rejects.toMatchObject({status:409});expect(rpc).toHaveBeenCalledTimes(1);});
 it("does not treat a failed status lookup as permission to replace checkout",async()=>{rpc.mockResolvedValue({data:null,error:{code:"08006"}});await expect(guestQuote(purchase,"client",raw)).rejects.toMatchObject({status:503});expect(rpc).toHaveBeenCalledTimes(1);});
+
+it("permits an explicitly acknowledged separate purchase for the exact pending reference",async()=>{
+ rpc.mockResolvedValueOnce({data:{...checkout,payment:{...checkout.payment,status:"pending",claim_available:false}},error:null}).mockResolvedValueOnce({data:"separate-checkout",error:null}).mockResolvedValueOnce({data:price,error:null});
+ const result=await guestQuote({...purchase,startNewForReference:"CA-original"},"client",raw);expect(result.raw).not.toBe(raw);expect(rpc.mock.calls.map(c=>c[0])).toEqual(["get_guest_checkout","begin_guest_checkout","create_guest_quote"]);expect(verifyAndFulfill).not.toHaveBeenCalled();
+});
+it("rejects acknowledgment for another reference",async()=>{rpc.mockResolvedValue({data:{...checkout,payment:{...checkout.payment,status:"pending"}},error:null});await expect(guestQuote({...purchase,startNewForReference:"CA-other"},"client",raw)).rejects.toMatchObject({status:409});expect(rpc).toHaveBeenCalledTimes(1);});
+it("never bypasses an unclaimed paid voucher using separate-purchase acknowledgment",async()=>{await expect(guestQuote({...purchase,startNewForReference:"CA-original"},"client",raw)).rejects.toMatchObject({status:409});expect(rpc).toHaveBeenCalledTimes(1);});

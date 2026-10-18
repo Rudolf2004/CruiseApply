@@ -19,14 +19,14 @@ async function guestRpc(raw:string|null,name:string,args:Record<string,unknown>=
 }
 export async function guestStatus(raw:string|null){return z.object({checkout_id:z.uuid(),payment:z.object({reference:z.string(),status:z.string(),charge_amount:z.number().int(),charge_currency:z.literal("GHS"),product_name:z.string().nullable(),paid_at:z.string().nullable(),claim_available:z.boolean().nullable()}).nullable()}).parse(await guestRpc(raw,"get_guest_checkout"));}
 export async function guestQuote(input:unknown,clientKey:string,previous:string|null){
-  guestEnabled();const values=z.object({voucherTypeId:z.uuid(),countryCode:z.string().regex(/^[A-Z]{2}$/),email:z.email().max(254),name:z.string().trim().min(1).max(200)}).strict().parse(input);
+  guestEnabled();const values=z.object({voucherTypeId:z.uuid(),countryCode:z.string().regex(/^[A-Z]{2}$/),email:z.email().max(254),name:z.string().trim().min(1).max(200),startNewForReference:z.string().min(1).max(100).optional()}).strict().parse(input);
   await paymentLimit(`guest-quote:${clientKey}`,20,600);
   if(previous){
     let prior:Awaited<ReturnType<typeof guestStatus>>|null=null;
     try{prior=await guestStatus(previous);}catch(error){if(!(error instanceof ApiError&&error.status===401)&&!(error instanceof ApplicantAuthError&&error.status===401))throw error;}
     const payment=prior?.payment;
     if(payment?.status==="successful"&&payment.claim_available!==false)throw new ApiError(409,"Your previous payment is complete. Receive and save its Serial Number and PIN before buying another voucher.");
-    if(payment&&!['successful','refunded','failed'].includes(payment.status))throw new ApiError(409,"Your earlier payment is still awaiting confirmation. Open its payment status before starting another purchase.");
+    if(payment&&!['successful','refunded','failed'].includes(payment.status)&&!(values.startNewForReference===payment.reference&&['pending','initialized'].includes(payment.status)))throw new ApiError(409,"Your earlier payment is still awaiting confirmation. Open its payment status before starting another purchase.");
   }
   const raw=randomBytes(32).toString("base64url"),db=serviceDatabase();
   const created=await db.rpc("begin_guest_checkout",{p_capability_hash:tokenDigest(raw),p_email:values.email,p_name:values.name,p_country_code:values.countryCode});
