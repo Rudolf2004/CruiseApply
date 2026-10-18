@@ -47,6 +47,18 @@ export async function guestInitialize(raw:string|null,input:unknown){
   if(saved.error)throw new ApiError(503,"Checkout status could not be saved. Check payment status before retrying.");
   return {authorizationUrl,reference:payment.reference};
 }
+export async function guestResume(raw:string|null){
+  const state=await guestStatus(raw),payment=state.payment;
+  if(!payment||!["initialized","pending"].includes(payment.status))throw new ApiError(409,"This payment is no longer awaiting checkout. Check its status.");
+  await paymentLimit(`guest-resume:${tokenDigest(raw!)}`,10,600);
+  const result=await serviceDatabase().from("payments").select("checkout_url").eq("reference",payment.reference).eq("guest_checkout_id",state.checkout_id).maybeSingle();
+  if(result.error)throw new ApiError(503,"Payment checkout could not be loaded. Check its status before retrying.");
+  const value=result.data?.checkout_url;
+  if(!value)throw new ApiError(409,"This checkout has no saved payment link. Check its status or choose a separate purchase.");
+  let url:URL;try{url=new URL(value);}catch{throw new ApiError(503,"Payment checkout is unavailable.");}
+  if(url.protocol!=="https:"||url.hostname!=="checkout.paystack.com"||url.username||url.password)throw new ApiError(503,"Payment checkout is unavailable.");
+  return {authorizationUrl:url.href,reference:payment.reference};
+}
 export async function guestVerify(raw:string|null,callbackReference?:string){
   const status=await guestStatus(raw);if(!status.payment||callbackReference&&callbackReference!==status.payment.reference)throw new ApiError(404,"Checkout not found.");
   await paymentLimit(`guest-verify:${tokenDigest(raw!)}`,10,600);

@@ -7,7 +7,7 @@ vi.mock("@/features/payments/service",()=>({paymentLimit:vi.fn(),verifyAndFulfil
 import {serviceDatabase} from "@/lib/supabase/server";
 import {createApplicantPin} from "@/lib/voucher-credentials";
 import {paymentLimit,verifyAndFulfill} from "@/features/payments/service";
-import {guestClaim,guestStatus,guestVerify,guestQuote} from "./service";
+import {guestClaim,guestStatus,guestVerify,guestQuote,guestResume} from "./service";
 const raw=Buffer.alloc(32,9).toString("base64url"),rpc=vi.fn();
 const checkout={checkout_id:"a752cd69-2810-4ae1-92a5-a49e067d3698",payment:{reference:"CA-original",status:"successful",charge_amount:15000,charge_currency:"GHS",product_name:"Application Access",paid_at:new Date().toISOString(),claim_available:true}};
 beforeEach(()=>{vi.clearAllMocks();vi.stubEnv("APPLICANT_AUTH_ENABLED","true");vi.stubEnv("PAYSTACK_SECRET_KEY","sk_test_fixture");vi.mocked(serviceDatabase).mockReturnValue({rpc} as unknown as ReturnType<typeof serviceDatabase>);rpc.mockResolvedValue({data:checkout,error:null});vi.mocked(createApplicantPin).mockResolvedValue({pin:"12345678",pinHash:"s1:securehash"});});
@@ -35,3 +35,25 @@ it("permits an explicitly acknowledged separate purchase for the exact pending r
 });
 it("rejects acknowledgment for another reference",async()=>{rpc.mockResolvedValue({data:{...checkout,payment:{...checkout.payment,status:"pending"}},error:null});await expect(guestQuote({...purchase,startNewForReference:"CA-other"},"client",raw)).rejects.toMatchObject({status:409});expect(rpc).toHaveBeenCalledTimes(1);});
 it("never bypasses an unclaimed paid voucher using separate-purchase acknowledgment",async()=>{await expect(guestQuote({...purchase,startNewForReference:"CA-original"},"client",raw)).rejects.toMatchObject({status:409});expect(rpc).toHaveBeenCalledTimes(1);});
+
+it("fresh visitors create a quote directly without earlier-payment lookup or provider calls",async()=>{
+ rpc.mockResolvedValueOnce({data:"fresh-checkout",error:null}).mockResolvedValueOnce({data:price,error:null});
+ await guestQuote(purchase,"fresh-client",null);expect(rpc.mock.calls.map(c=>c[0])).toEqual(["begin_guest_checkout","create_guest_quote"]);expect(verifyAndFulfill).not.toHaveBeenCalled();
+});
+it("an existing quote without a payment does not block price review",async()=>{
+ rpc.mockResolvedValueOnce({data:{...checkout,payment:null},error:null}).mockResolvedValueOnce({data:"fresh-checkout",error:null}).mockResolvedValueOnce({data:price,error:null});
+ expect((await guestQuote(purchase,"client",raw)).quote).toEqual(price);
+});
+it("resumes only the cookie-scoped saved checkout without initializing another payment",async()=>{
+ rpc.mockResolvedValue({data:{...checkout,payment:{...checkout.payment,status:"pending"}},error:null});
+ const maybeSingle=vi.fn().mockResolvedValue({data:{checkout_url:"https://checkout.paystack.com/existing"},error:null}),eq=vi.fn(),select=vi.fn();eq.mockReturnValue({eq,maybeSingle});select.mockReturnValue({eq});
+ vi.mocked(serviceDatabase).mockReturnValue({rpc,from:vi.fn().mockReturnValue({select})} as unknown as ReturnType<typeof serviceDatabase>);
+ expect(await guestResume(raw)).toEqual({reference:"CA-original",authorizationUrl:"https://checkout.paystack.com/existing"});expect(eq.mock.calls).toEqual([["reference","CA-original"],["guest_checkout_id",checkout.checkout_id]]);expect(rpc).toHaveBeenCalledTimes(1);
+});
+it("does not resume completed or foreign checkouts",async()=>{await expect(guestResume(raw)).rejects.toMatchObject({status:409});await expect(guestResume("invalid")).rejects.toMatchObject({status:401});});
+it("rejects an unsafe saved provider URL",async()=>{
+ rpc.mockResolvedValue({data:{...checkout,payment:{...checkout.payment,status:"pending"}},error:null});
+ const maybeSingle=vi.fn().mockResolvedValue({data:{checkout_url:"https://evil.example/"},error:null}),eq=vi.fn();eq.mockReturnValue({eq,maybeSingle});
+ vi.mocked(serviceDatabase).mockReturnValue({rpc,from:vi.fn().mockReturnValue({select:()=>({eq})})} as unknown as ReturnType<typeof serviceDatabase>);
+ await expect(guestResume(raw)).rejects.toMatchObject({status:503});
+});
